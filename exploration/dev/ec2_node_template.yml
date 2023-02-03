@@ -1,0 +1,32 @@
+# These apply to all instances
+# you can modify them here
+BlockDeviceMappings:
+- DeviceName: /dev/sda1
+  Ebs:
+    DeleteOnTermination: true
+    Encrypted: false
+    # GiB
+    VolumeSize: 40  # may need modification
+    VolumeType: gp2
+KeyName: MyKeyPair
+
+# These are region-specific parameters
+# just serve as template, no need to change them here
+# but remember to configure them in ./cluster_plan.yml
+NetworkInterfaces:
+- SubnetId: subnet-0fa65a4dd0c081e8a
+  DeviceIndex: 0
+ImageId: ami-0b9064170e32bde34
+
+# These are role-specific parameters
+# just serve as template, no need to change them here
+# but remember to configure them in ./cluster_plan.yml
+InstanceType: c5.4xlarge
+
+# These are instance-specific parameters
+# just serve as template, no need to change them here
+TagSpecifications:
+- ResourceType: instance
+  Tags:
+  - Key: Name
+    Value: plato

@@ -1,0 +1,13 @@
+numpy
+python-socketio
+aiohttp
+requests
+boto3
+pyyaml
+scipy
+cryptography
+pycryptodome
+redis
+torch
+torchvision
+psutil

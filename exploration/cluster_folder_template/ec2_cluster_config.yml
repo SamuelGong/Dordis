@@ -1,0 +1,37 @@
+# The cluster plan
+server:
+  name: hyades-coordinator
+  type: c5.4xlarge
+  region: us-east-2
+client_template:
+  type_list:
+    - name_prefix: hyades-worker-
+      count: 100
+      type: c5.xlarge
+      region: us-east-2
+      upload_kbps:
+        type: constant
+        args:
+          value: 21504
+      download_kbps:
+        type: constant
+        args:
+          value: 21504
+
+# For deploying a geo-distributed cluster atop different regions of AWS
+# instance need to be placed into those subnets where peer is enabled
+subnets:
+  eu-west-2: subnet-0f1c9e7846cef499a # London
+  ap-northeast-1: subnet-06fdd082de1107483 # Tokyo
+  us-east-2: subnet-0fa65a4dd0c081e8a # Ohio
+  us-west-1: subnet-03b808eba36a89bfc # California
+  ap-southeast-2: subnet-0daf535bca6786d49 # Sydney
+
+images:
+    # Ubuntu Server 18.04 LTS (HVM), SSD Volume Type, 64-bit x86
+    # Effective Date: Jun 20, 2021 (These may change over time)
+    eu-west-2: ami-09a56048b08f94cdf
+    ap-northeast-1: ami-0fe22bffdec36361c
+    us-east-2: ami-0b9064170e32bde34
+    us-west-1: ami-07b068f843ec78e72
+    ap-southeast-2: ami-0f39d06d145e9bb63
