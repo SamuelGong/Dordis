@@ -1,7 +1,7 @@
 # Hyades
 
 This repository contains the evaluation artifacts of our arXiv'22 paper
-[Taming Client Dropout for Distributed Differential Privacy in Federated Learning](https://arxiv.org/pdf/2209.12528.pdf).
+[Taming Client Dropout and Improving Efficiency for Distributed Differential Privacy in Federated Learning](https://arxiv.org/pdf/2209.12528.pdf).
 
 ## 1. Overview
 
