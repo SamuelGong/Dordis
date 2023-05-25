@@ -20,8 +20,8 @@ def get(num_classes=10):
     model_type = model_name.split('_')[0]
     model = None
 
-    if hasattr(Config().app.data, "num_classes"):
-        num_classes = Config().app.data.num_classes
+    if hasattr(Config().app.trainer, "num_classes"):
+        num_classes = Config().app.trainer.num_classes
 
     for name, registered_model in registered_models.items():
         if name.startswith(model_type):

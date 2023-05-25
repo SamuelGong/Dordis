@@ -464,12 +464,15 @@ class ProtocolServer(base.ProtocolServer, PlaintextConst):
             f"{log_prefix_str} Phase done.",
             f"{server_only_log_prefix_str} Round {round_idx} ended.",
         ]
-        self.record_attendance_and_sample_next_round(
-            client_list=involved_clients,
-            round_idx=round_idx,
-            log_prefix_str=log_prefix_str,
-            abort_message_list=abort_message_list
-        )
+
+        # this is for correct execution of pipelining
+        if chunk_idx == 0:  # TODO: here assumes all chunks are consistent
+            self.record_attendance_and_sample_next_round(
+                client_list=involved_clients,
+                round_idx=round_idx,
+                log_prefix_str=log_prefix_str,
+                abort_message_list=abort_message_list
+            )
 
         # quantization for sending back to clients
         if hasattr(Config().agg, "quantize"):

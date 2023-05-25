@@ -200,8 +200,8 @@ class Handler(base.Handler):
         beta = dp_params_dict["beta"]
         logging.info(f"[Debug] before scale {round(scale, 3)}: norm: {round(np.linalg.norm(data), 3)}, "
                      f"max: {round(max(data), 3)}, min: {round(min(data), 3)}, "
-                     f"first six: {[round(e, 3) for e in data[:6]]}, "
-                     f"last six: {[round(e, 3) for e in data[-6:]]}.")
+                     f"first 6: {[round(e, 3) for e in data[:6]]}, "
+                     f"last 6: {[round(e, 3) for e in data[-6:]]}.")
         data = scaled_quantization(
             data=data,
             scale=scale,

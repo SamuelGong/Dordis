@@ -71,10 +71,10 @@ class Trainer(base.Trainer):
                     for epoch in range(1, epochs + 1):
                         for batch_id, (examples,
                                        labels) in enumerate(train_loader):
-                            if Config().app.data.datasource in ["FEMNIST", "MNIST"] \
-                                    and "cnn" not in Config().app.trainer.model_name:
-                                # one channel to three channels
-                                examples = examples.repeat(1, 3, 1, 1)
+                            # if Config().app.data.datasource in ["FEMNIST", "MNIST"] \
+                            #         and "cnn" not in Config().app.trainer.model_name:
+                            #     # one channel to three channels
+                            #     examples = examples.repeat(1, 3, 1, 1)
 
                             examples, labels = examples.to(self.device), labels.to(
                                 self.device)
@@ -132,7 +132,7 @@ class Trainer(base.Trainer):
                     log_interval = 10 * sleep_interval
                     if retry_time % log_interval == 0:
                         logging.info(f"Training on client #{self.client_id} failed due to "
-                                     f"RuntimeError: {str(training_exception)[:20]}. "
+                                     f"RuntimeError: {str(training_exception)}. "
                                      f"Retrying the {retry_time + 1}-th time...")
                     time.sleep(sleep_interval)
                     retry_time += 1
@@ -174,10 +174,10 @@ class Trainer(base.Trainer):
                     overall_loss = 0
                     with torch.no_grad():
                         for examples, labels in test_loader:
-                            if Config().app.data.datasource in ["FEMNIST", "MNIST"] \
-                                    and "cnn" not in Config().app.trainer.model_name:
-                                # one channel to three channels
-                                examples = examples.repeat(1, 3, 1, 1)
+                            # if Config().app.data.datasource in ["FEMNIST", "MNIST"] \
+                            #         and "cnn" not in Config().app.trainer.model_name:
+                            #     # one channel to three channels
+                            #     examples = examples.repeat(1, 3, 1, 1)
 
                             examples, labels = examples.to(self.device), labels.to(
                                 self.device)
@@ -208,7 +208,7 @@ class Trainer(base.Trainer):
                     log_interval = 10 * sleep_interval
                     if retry_time % log_interval == 0:
                         logging.info(f"Testing on client #{self.client_id} failed due to "
-                                     f"RuntimeError: {str(testing_exception)[:20]}. "
+                                     f"RuntimeError: {str(testing_exception)}. "
                                      f"Retrying the {retry_time + 1}-th time...")
                     time.sleep(sleep_interval)
                     retry_time += 1
@@ -256,10 +256,10 @@ class Trainer(base.Trainer):
                 model_name = Config().app.trainer.model_name
                 with torch.no_grad():
                     for examples, labels in test_loader:
-                        if Config().app.data.datasource in ["FEMNIST", "MNIST"] \
-                                and "cnn" not in Config().app.trainer.model_name:
-                            # one channel to three channels
-                            examples = examples.repeat(1, 3, 1, 1)
+                        # if Config().app.data.datasource in ["FEMNIST", "MNIST"] \
+                        #         and "cnn" not in Config().app.trainer.model_name:
+                        #     # one channel to three channels
+                        #     examples = examples.repeat(1, 3, 1, 1)
 
                         examples, labels = examples.to(self.device), labels.to(
                             self.device)
@@ -288,7 +288,7 @@ class Trainer(base.Trainer):
                     log_interval = 10 * sleep_interval
                     if retry_time % log_interval == 0:
                         logging.info(f"Testing on the server failed due to "
-                                     f"RuntimeError: {str(testing_exception)[:20]}. "
+                                     f"RuntimeError: {str(testing_exception)}. "
                                      f"Retrying the {retry_time + 1}-th time...")
                     time.sleep(sleep_interval)
                     retry_time += 1

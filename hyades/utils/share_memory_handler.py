@@ -12,6 +12,8 @@ SIMULATED_CLIENT_LATENCY = "simulated_client_latency"
 CLIENT_STATS = "client_stats"
 SAMPLED_CLIENTS = "sampled_clients"
 TRACE_RELATED = "trace_related"
+NEIGHBORS_DICT = "neighbors_dict"
+NEIGHBORS = "neighbors"
 
 # variables shared among a client's processes
 DELAY_MOCKING_FACTORS = "delay_mocking_factors"

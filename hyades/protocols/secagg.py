@@ -1,68 +1,74 @@
+import os
 import gc
 import logging
 import numpy as np
 import multiprocessing as mp
-from hyades.config import Config
-from hyades.protocols import plaintext
-from hyades.protocols.const import SecAggConst
-from hyades.utils.misc import plaintext_add, \
+from sastream.config import Config
+from sastream.protocols import plaintext
+from networkx.generators.harary_graph import *
+from sastream.protocols.const import SecAggConst
+from sastream.utils.misc import plaintext_add, \
     plaintext_aggregate, get_chunks_idx
-from hyades.primitives.key_agreement \
+from sastream.primitives.key_agreement \
     import registry as key_agreement_registry
-from hyades.primitives.secret_sharing \
+from sastream.primitives.secret_sharing \
     import registry as secret_sharing_registry
-from hyades.primitives.authenticated_encryption \
+from sastream.primitives.authenticated_encryption \
     import registry as authenticated_encryption_registry
-from hyades.primitives.pseudorandom_generator \
+from sastream.primitives.pseudorandom_generator \
     import registry as pseudorandom_generator_registry
-from hyades.primitives.utils \
+from sastream.primitives.utils \
     import rand_bytes, secagg_concatenate, secagg_separate
-from hyades.primitives.differential_privacy\
+from sastream.primitives.differential_privacy\
     .utils.misc import modular_clip
-from hyades.utils.share_memory_handler import SCHEDULE
+from sastream.utils.share_memory_handler \
+    import SCHEDULE, NEIGHBORS_DICT, NEIGHBORS
 
 N_CPUS = mp.cpu_count()
 
 
-def get_common_factors(secret_dict_dict, first_client_id):
-    seed_shares_list = []
-    for _, d in secret_dict_dict.items():
-        for idx, seed_share in enumerate(d[first_client_id][1]):  # idx 0 is for b_share
-            if len(seed_shares_list) == idx:
-                seed_shares_list.append([seed_share])
-            else:
-                seed_shares_list[idx].append(seed_share)
-
-    first_seed_shares = seed_shares_list[0]
-    secret_sharing_handler = secret_sharing_registry.get()
-    common_factors = secret_sharing_handler.get_factors_for_combine(first_seed_shares)
-    return common_factors
-
-
-def server_recover_seed_worker(client_id, secret_dict_dict, common_factors):
-    secret_sharing_handler = secret_sharing_registry.get()
-    seed_shares_list = []
-    for _, d in secret_dict_dict.items():
-        for idx, seed_share in enumerate(d[client_id][1]):  # idx 0 is for b_share
-            if len(seed_shares_list) == idx:
-                seed_shares_list.append([seed_share])
-            else:
-                seed_shares_list[idx].append(seed_share)
-
-    seeds = []
-    for seed_shares in seed_shares_list:
-        seed = secret_sharing_handler \
-                .combine_shares(seed_shares, aux=(common_factors,))
-        # big-ended, see around Line 819 in secagg.py
-        seed = int.from_bytes(seed, 'big')
-        seeds.append(seed)
-    return client_id, seeds
+# # be careful, this should not be used with SecAgg+
+# def get_common_factors(secret_dict_dict, first_client_id):
+#     seed_shares_list = []
+#     for _, d in secret_dict_dict.items():
+#         for idx, seed_share in enumerate(d[first_client_id][1]):  # idx 0 is for b_share
+#             if len(seed_shares_list) == idx:
+#                 seed_shares_list.append([seed_share])
+#             else:
+#                 seed_shares_list[idx].append(seed_share)
+#
+#     first_seed_shares = seed_shares_list[0]
+#     secret_sharing_handler = secret_sharing_registry.get()
+#     common_factors = secret_sharing_handler.get_factors_for_combine(first_seed_shares)
+#     return common_factors
+#
+#
+# # be careful, this should not be used with SecAgg+
+# def server_recover_seed_worker(client_id, secret_dict_dict, common_factors):
+#     secret_sharing_handler = secret_sharing_registry.get()
+#     seed_shares_list = []
+#     for _, d in secret_dict_dict.items():
+#         for idx, seed_share in enumerate(d[client_id][1]):  # idx 0 is for b_share
+#             if len(seed_shares_list) == idx:
+#                 seed_shares_list.append([seed_share])
+#             else:
+#                 seed_shares_list[idx].append(seed_share)
+#
+#     seeds = []
+#     for seed_shares in seed_shares_list:
+#         seed = secret_sharing_handler \
+#                 .combine_shares(seed_shares, aux=(common_factors,))
+#         # big-ended, see around Line 819 in secagg.py
+#         seed = int.from_bytes(seed, 'big')
+#         seeds.append(seed)
+#     return client_id, seeds
 
 
 def server_generate_output_worker(client_list, recoverable_set,
                                   secret_dict_dict, surviving_clients,
                                   num_range, dim, bit_width,
-                                  shared_key_s_dict, public_keys_dict):
+                                  shared_key_s_dict, public_keys_dict,
+                                  neighbors_dict=None):
     result = [0] * dim
     secret_sharing_handler = secret_sharing_registry.get()
     pseudorandom_generator_handler = pseudorandom_generator_registry.get()
@@ -71,6 +77,20 @@ def server_generate_output_worker(client_list, recoverable_set,
     # logging.info(f"{debug_prefix} Processing {len(client_list)} clients.")
 
     for client_id in client_list:
+        surviving_neighbors = surviving_clients
+        recoverable_neighbors = recoverable_set
+        if neighbors_dict is not None:
+            neighbors = neighbors_dict[client_id]
+            surviving_neighbors = [e for e in surviving_clients if e in neighbors]
+            if client_id in recoverable_set:
+                surviving_neighbors.append(client_id)
+            else:
+                recoverable_neighbors = [e for e in recoverable_set if e in neighbors]
+
+        # logging.info(f"{debug_prefix} [Debug] In server_generate_output_worker:"
+        #              f" Start processing client "
+        #              f"{client_id} whose neighbors are {neighbors} (surviving: {surviving_neighbors}). "
+        #              f"Recoverable_set: {recoverable_set}.")
         if client_id in recoverable_set:
             # logging.info(f"{debug_prefix} [A] Start processing client {client_id}.")
             # if dropout_resilient:
@@ -78,7 +98,7 @@ def server_generate_output_worker(client_list, recoverable_set,
             #                             for s in surviving_clients]
             # else:
             self_mask_share_list = [secret_dict_dict[s][client_id]
-                                    for s in surviving_clients]
+                                    for s in surviving_neighbors]
 
             b = secret_sharing_handler \
                 .combine_shares(self_mask_share_list)
@@ -99,12 +119,12 @@ def server_generate_output_worker(client_list, recoverable_set,
         else:
             # logging.info(f"{debug_prefix} [B] Start processing client {client_id}.")
             s_sk_share_list = [secret_dict_dict[s][client_id]
-                               for s in surviving_clients]
+                               for s in surviving_neighbors]
             s_sk_bytes = secret_sharing_handler \
                 .combine_shares(s_sk_share_list)
             s_sk = key_agreement_handler\
                 .bytes_to_secret_key(s_sk_bytes)
-            for c in recoverable_set:
+            for c in recoverable_neighbors:
                 if c in shared_key_s_dict \
                         and client_id in shared_key_s_dict[c]:
                     # already generate, no need replicate
@@ -161,6 +181,13 @@ class ProtocolServer(plaintext.ProtocolServer, SecAggConst):
                 seed = Config().clients.dropout.seed
                 np.random.seed(seed)
             self.dropout_mocking_phase = self.UPLOAD_DATA
+
+        # added for SecAgg+
+        self.advanced = False
+        if hasattr(Config().agg.security, "advanced") \
+                and Config().agg.security.advanced:
+            self.advanced = True
+            logging.info(f"SecAgg+ enabled.")
 
     def set_graph_dict(self):
         self.graph_dict = {
@@ -323,7 +350,7 @@ class ProtocolServer(plaintext.ProtocolServer, SecAggConst):
                      "clients to advertise keys.", log_prefix_str)
 
         sampled_clients = self.fast_get_sampled_clients(round_idx)
-        return {
+        result = {
             "payload": {
                 'round': round_idx,
                 'chunk': chunk_idx,
@@ -333,6 +360,30 @@ class ProtocolServer(plaintext.ProtocolServer, SecAggConst):
             "key_postfix": [round_idx, chunk_idx, phase_idx],
             "log_prefix_str": log_prefix_str
         }
+
+        if self.advanced:
+            # TODO: to determined k automatically
+            k = Config().agg.security.advanced.k
+            net = hkn_harary_graph(
+                k, len(sampled_clients)
+            )
+
+            logical_neighbors_dict = {}
+            for idx in range(len(sampled_clients)):
+                client_id = sampled_clients[idx]
+                n_list = [sampled_clients[e[1]] for e in net.edges(idx)]
+                logical_neighbors_dict[client_id] = n_list
+
+            self.set_a_shared_value(
+                key=[NEIGHBORS_DICT, round_idx],
+                value=logical_neighbors_dict
+            )
+            logging.info(f"{log_prefix_str} "
+                         f"Neighbors dict for SecAgg+: "
+                         f"{logical_neighbors_dict}.")
+            result["payload"]["neighbors_dict"] = logical_neighbors_dict
+
+        return result
 
     def share_keys(self, args):
         round_idx, chunk_idx = args
@@ -530,6 +581,13 @@ class ProtocolServer(plaintext.ProtocolServer, SecAggConst):
                 unbatched_masked_data_list.append(unbatched_masked_data)
             masked_data_list = unbatched_masked_data_list
 
+        # do it early to save space
+        self.delete_record_for_a_phase(
+            round_idx=round_idx,
+            chunk_idx=chunk_idx,
+            phase_idx=self.UPLOAD_DATA
+        )
+
         # aggregate with masks (and excessive noise)
 
         # for masked_data in masked_data_list:
@@ -539,8 +597,8 @@ class ProtocolServer(plaintext.ProtocolServer, SecAggConst):
             mod_bit=self.bit_width
         )
         logging.info(f"[Debug] Aggregation result:"
-                     f"first six: {masked_agg_res[:6]},"
-                     f"last six: {masked_agg_res[-6:]}.")
+                     f"first 6: {masked_agg_res[:6]},"
+                     f"last 6: {masked_agg_res[-6:]}.")
 
         if not (hasattr(Config(), "simulation")
                 and Config().simulation.type == 'simple'):
@@ -554,6 +612,15 @@ class ProtocolServer(plaintext.ProtocolServer, SecAggConst):
 
             # balancing the workload on a finer granularity
             # otherwise the performance can have great standard deviation
+
+            # for scalability. TODO: avoid hard-coding
+            # pool_outputs = None
+            # for b in range(0, len(recoverable_set), 16):
+            #     e = b + 16
+            #     if e > len(recoverable_set):
+            #         e = len(recoverable_set)
+            #     recoverable_subset = recoverable_set[b:e]
+
             u_2_in = [e for e in u_2 if e in recoverable_set]
             u_2_out = [e for e in u_2 if e not in recoverable_set]
             u_2_in_list = [u_2_in[begin:end]
@@ -571,11 +638,20 @@ class ProtocolServer(plaintext.ProtocolServer, SecAggConst):
             #                     shared_key_s_dict, public_keys_dict, True)
             #                    for u_2_part in u_2_list]
             # else:
-            pool_inputs = [(u_2_part, recoverable_set,
-                            secret_dict_dict, surviving_clients,
-                            num_range, dim, self.bit_width,
-                            shared_key_s_dict, public_keys_dict)
-                           for u_2_part in u_2_list]
+            if not self.advanced:
+                pool_inputs = [(u_2_part, recoverable_set,
+                                secret_dict_dict, surviving_clients,
+                                num_range, dim, self.bit_width,
+                                shared_key_s_dict, public_keys_dict, None)
+                               for u_2_part in u_2_list]
+            else:
+                neighbors_dict = self.fast_get_neighbors_dict(round_idx)
+                pool_inputs = [(u_2_part, recoverable_set,
+                                secret_dict_dict, surviving_clients,
+                                num_range, dim, self.bit_width,
+                                shared_key_s_dict, public_keys_dict, neighbors_dict)
+                               for u_2_part in u_2_list]
+
             with mp.Pool(processes=processes) as pool:
                 pool_outputs = pool.starmap(
                     server_generate_output_worker, pool_inputs)
@@ -653,9 +729,18 @@ class ProtocolServer(plaintext.ProtocolServer, SecAggConst):
                                     execessive_noise_seeds, True)
                                    for client_id, execessive_noise_seeds
                                    in excessive_noise_seeds_dict.items()]
+
+                    # pool_outputs = None
+                    # for b in range(0, len(pool_inputs), 16):
+                    #     e = b + 16
+                    #     if e > len(pool_inputs):
+                    #         e = len(pool_inputs)
+                    #     pool_inputs_subset = pool_inputs[b:e]
+
                     processes = N_CPUS // 2  # based on practical observations
                     with mp.Pool(processes=processes) as pool:
                         pool_outputs = pool.starmap(
+                            # self.dp_handler.add_excessive_noise, pool_inputs_subset)
                             self.dp_handler.add_excessive_noise, pool_inputs)
                     for negative_noise, _ in pool_outputs:
                         masked_agg_res = plaintext_add(
@@ -697,7 +782,8 @@ class ProtocolServer(plaintext.ProtocolServer, SecAggConst):
             chunk_idx=chunk_idx,
             phases=[self.PREPARE_DATA, self.ENCODE_DATA,
                     self.ADVERTISE_KEYS, self.SHARE_KEYS,
-                    self.UPLOAD_DATA, self.MASKING,
+                    # self.UPLOAD_DATA, self.MASKING,
+                    self.MASKING,
                     self.UNMASKING, self.DOWNLOAD_DATA,
                     self.DECODE_DATA, self.CLIENT_USE_OUTPUT]
         )
@@ -720,6 +806,13 @@ class ProtocolClient(plaintext.ProtocolClient, SecAggConst):
         self.pseudorandom_generator_handler \
             = pseudorandom_generator_registry.get()
 
+        # added for SecAgg+
+        self.advanced = False
+        if hasattr(Config().agg.security, "advanced") \
+                and Config().agg.security.advanced:
+            self.advanced = True
+            logging.info(f"SecAgg+ enabled.")
+
     def get_threshold(self, round_idx):
         num_sampled_clients = self.get_num_sampled_clients(round_idx=round_idx)
         return int(np.ceil(self.ss_threshold_frac * num_sampled_clients))
@@ -739,13 +832,23 @@ class ProtocolClient(plaintext.ProtocolClient, SecAggConst):
         }
 
     def advertise_keys(self, args):
-        _, round_idx, chunk_idx, phase_idx, logical_client_id = args
+        payload, round_idx, chunk_idx, phase_idx, logical_client_id = args
         log_prefix_str = self.get_log_prefix_str(
             round_idx=round_idx,
             chunk_idx=chunk_idx,
             phase_idx=phase_idx,
             logical_client_id=logical_client_id
         )
+        if self.advanced:
+            neighbors_dict = payload["neighbors_dict"]
+            neighbors = neighbors_dict[logical_client_id]
+            self.set_a_shared_value(
+                key=[NEIGHBORS, round_idx],
+                value=neighbors
+            )
+            logging.info(f"Received my neighbors for SecAgg+:"
+                         f" {sorted(neighbors)}.")
+
         response = {
             "payload": {
                 'client_id': self.client_id,
@@ -809,6 +912,21 @@ class ProtocolClient(plaintext.ProtocolClient, SecAggConst):
             "prompt": "Secret shared."
         }
 
+        if self.advanced:
+            neighbors = self.get_a_shared_value(key=[NEIGHBORS, round_idx])
+
+            # only keep me and neighbors
+            keys_to_delete = []
+            for client_id in surviving_client_dict.keys():
+                if client_id == logical_client_id:
+                    continue
+                if client_id not in neighbors:
+                    keys_to_delete.append(client_id)
+            for key in keys_to_delete:
+                del surviving_client_dict[key]
+            # logging.info(f"{log_prefix_str} [Debug] N {neighbors}, surviving in share_keys "
+            #              f"(except self): {surviving_client_dict.keys()}.")
+
         # if False:  # Only for testing
         if (hasattr(Config(), "simulation")
                 and Config().simulation.type == 'simple'):
@@ -819,8 +937,16 @@ class ProtocolClient(plaintext.ProtocolClient, SecAggConst):
         else:
             # sample a random element b
             b = rand_bytes(num=32)
-            t = self.get_threshold(round_idx=round_idx)
-            n = len(list(surviving_client_dict.keys()))  # i.e., U_1
+            if not self.advanced:
+                t = self.get_threshold(round_idx=round_idx)
+                n = len(list(surviving_client_dict.keys()))  # i.e., U_1
+            else:
+                n = len(list(surviving_client_dict.keys()))
+                # TODO: currently hard-coding according to Olympia
+                # resulting in a beta = t/k = 1/2
+                t = n // 2
+            logging.info(f"{log_prefix_str}: t={t} "
+                         f"and n={n} for secret sharing.")
 
             # generate t-out-of-U_1 shares for s_sk and b
             c_keypair, s_keypair = self.batch_get_shared_values(
@@ -997,6 +1123,9 @@ class ProtocolClient(plaintext.ProtocolClient, SecAggConst):
                 u_2.append(src_client_id)
             u_2.append(logical_client_id)
 
+            # logging.info(f"{log_prefix_str} [Debug] "
+            #              f"U_2 in masking (excluding self): {surviving_client_dict.keys()}.")
+
             # mask data
             num_range = [0, 1 << self.bit_width]
             dim = len(data)
@@ -1007,6 +1136,7 @@ class ProtocolClient(plaintext.ProtocolClient, SecAggConst):
             for src_client_id in surviving_client_list:
                 shared_key_s = client_data_dict[src_client_id]['shared_key_s']
                 self.pseudorandom_generator_handler.set_seed(shared_key_s)
+                # if False:  # debug only
                 pairwise_mask = self.pseudorandom_generator_handler\
                     .generate_numbers(
                     num_range=num_range,
@@ -1022,6 +1152,7 @@ class ProtocolClient(plaintext.ProtocolClient, SecAggConst):
                 )
 
             self.pseudorandom_generator_handler.set_seed(seed=b)
+            # if False:  # debug only
             self_mask = self.pseudorandom_generator_handler\
                 .generate_numbers(
                 num_range=num_range,
@@ -1068,6 +1199,17 @@ class ProtocolClient(plaintext.ProtocolClient, SecAggConst):
             logical_client_id=logical_client_id
         )
         u_3 = payload['surviving_clients']
+        if self.advanced:
+            neighbors = self.get_a_shared_value(key=[NEIGHBORS, round_idx])
+
+            # only keep me and neighbors
+            keys_to_reserve = []
+            for client_id in u_3:
+                if client_id == logical_client_id \
+                        or client_id in neighbors:
+                    keys_to_reserve.append(client_id)
+            u_3 = keys_to_reserve
+
         u_2 = self.get_a_shared_value(key=['u_2', round_idx, chunk_idx])
 
         u_2_minus_u_3 = list(set(u_2) - set(u_3))

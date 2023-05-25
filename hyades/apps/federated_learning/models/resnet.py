@@ -80,9 +80,9 @@ class Bottleneck(nn.Module):
 
 
 class Model(nn.Module):
-    def __init__(self, block, num_blocks, num_classes=10):
+    def __init__(self, block, num_blocks, num_classes=10, model_type=None):
         super().__init__()
-
+        self.model_type = model_type
         self.in_planes = 64
 
         self.conv1 = nn.Conv2d(3,
@@ -131,7 +131,12 @@ class Model(nn.Module):
         out = self.layer2(out)
         out = self.layer3(out)
         out = self.layer4(out)
-        out = F.avg_pool2d(out, 4)
+
+        if "mnist" not in self.model_type:
+            out = F.avg_pool2d(out, 4)
+        else:
+            out = F.avg_pool2d(out, 2)
+        # out = F.avg_pool2d(out, 4)
         out = out.view(out.size(0), -1)
         out = self.linear(out)
         return out
@@ -158,7 +163,7 @@ class Model(nn.Module):
     @staticmethod
     def is_valid_model_type(model_type):
         return (model_type.startswith('resnet_')
-                and len(model_type.split('_')) == 2
+                and len(model_type.split('_')) >= 2
                 and int(model_type.split('_')[1]) in [18, 34, 50, 101, 152])
 
     @staticmethod
@@ -170,12 +175,19 @@ class Model(nn.Module):
         resnet_type = int(model_type.split('_')[1])
 
         if resnet_type == 18:
-            return Model(BasicBlock, [2, 2, 2, 2], num_classes)
+            result = Model(BasicBlock, [2, 2, 2, 2], num_classes, model_type)
         elif resnet_type == 34:
-            return Model(BasicBlock, [3, 4, 6, 3], num_classes)
+            result = Model(BasicBlock, [3, 4, 6, 3], num_classes, model_type)
         elif resnet_type == 50:
-            return Model(Bottleneck, [3, 4, 6, 3], num_classes)
+            result = Model(Bottleneck, [3, 4, 6, 3], num_classes, model_type)
         elif resnet_type == 101:
-            return Model(Bottleneck, [3, 4, 23, 3], num_classes)
+            result = Model(Bottleneck, [3, 4, 23, 3], num_classes, model_type)
         elif resnet_type == 152:
-            return Model(Bottleneck, [3, 8, 36, 3], num_classes)
+            result = Model(Bottleneck, [3, 8, 36, 3], num_classes, model_type)
+        else:
+            raise NotImplementedError
+
+        if "mnist" in model_type:
+            result.conv1 = nn.Conv2d(1, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
+
+        return result

@@ -31,7 +31,7 @@ def log_sketch(data, log_prefix_str, mode="server", validate=False):
         sketch_num = debug_params.sketch_num
         _log_sketch(
             data=data,
-            round_para=2,
+            round_para=4,
             sketch_num=sketch_num,
             prefix_string=log_prefix_str,
             validate=validate

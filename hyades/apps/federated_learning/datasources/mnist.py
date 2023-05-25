@@ -55,7 +55,7 @@ class DataSource(base.DataSource):
         self.print_partition_size()
 
     def num_train_examples(self):
-        return 60000
+        return len(self.trainset)
 
     def num_test_examples(self):
-        return 10000
+        return len(self.testset)

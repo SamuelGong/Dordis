@@ -33,6 +33,31 @@ def _get_client_dataset_size(clients):
     return result
 
 
+def if_closest_pretrained_model_exists(existing_pretrained_models,
+                                       target_num_rounds):
+    _round_indices = []
+    for pretrained_model_name in existing_pretrained_models:
+        _round_idx = int(pretrained_model_name.split('-r')[-1])
+        _round_indices.append(_round_idx)
+    if len(_round_indices) == 0:
+        return None
+
+    _round_indices = sorted(_round_indices)
+    _i = None
+    for _j, _round_idx in enumerate(_round_indices):
+        if _round_idx > target_num_rounds:
+            _i = _j - 1
+
+    # if there is a cloest pretrained model that can be reused
+    if _i is None or not _i == -1:  # not _j == 0
+        if _i is None:
+            _i = -1
+        closest_pretrained_model_round_idx = _round_indices[_i]
+        return closest_pretrained_model_round_idx
+    else:
+        return None
+
+
 class AppServer(base.AppServer, Payload):
     def __init__(self, client_id=0):
         Payload.__init__(self)
@@ -50,6 +75,28 @@ class AppServer(base.AppServer, Payload):
         self.testset = self.datasource.get_test_set()
 
         self.extract_model_meta(model=self.trainer.model)
+
+        self.model_save_interval = 0
+        if hasattr(Config().results, "model_save_interval"):
+            self.model_save_interval = Config().results.model_save_interval
+
+        self.to_start_from_pretrained_model = False
+        if hasattr(Config().app.trainer, "start_from_pretrained_model"):
+            self.to_start_from_pretrained_model \
+                = Config().app.trainer.start_from_pretrained_model
+
+    def if_start_from_pretrained_model(self):
+        return self.to_start_from_pretrained_model
+
+    def if_closest_pretrained_model_exists(self):
+        existing_pretrained_models = self.trainer.list_saved_models()
+        target_num_rounds = Config().app.repeat
+        closest_pretrained_model_round_idx \
+            = if_closest_pretrained_model_exists(
+            existing_pretrained_models,
+            target_num_rounds
+        )
+        return closest_pretrained_model_round_idx
 
     def get_client_dataset_size_dict(self, clients, log_prefix_str):
         logging.info(f"{log_prefix_str} "
@@ -95,7 +142,7 @@ class AppServer(base.AppServer, Payload):
         if self.debug \
                 and hasattr(Config().app.debug.server, "test") \
                 and Config().app.debug.server.test is True:
-            self.trainer.load_weights(agg_res["weights"])
+            # self.trainer.load_weights(agg_res["weights"])
             accuracy = self.trainer.server_test(self.testset)
             logging.info(f"{log_prefix_str} [Debug]"
                          f" Testing accuracy: {round(accuracy, 4)}.")
@@ -106,18 +153,44 @@ class AppServer(base.AppServer, Payload):
 
         # averaging model updates
         agg_res = self.strip_possible_zeros(agg_res, chunk_idx)  # related to DP
-        weight_chunk = np.array(agg_res) / len(involved_clients)
+        chunk = np.array(agg_res) / len(involved_clients)
         logging.info(f"{log_prefix_str} Model updates aggregated.")
-        logging.info(f"[Debug] Aggregate, "
-                     f"first six: {[round(e, 4) for e in weight_chunk[:6]]}, "
-                     f"last six: {[round(e, 4) for e in weight_chunk[-6:]]}.")
+        logging.info(f"[Debug] Chunk after aggregation, "
+                     f"first 6: {[round(e, 4) for e in chunk[:6]]}, "
+                     f"last 6: {[round(e, 4) for e in chunk[-6:]]}.")
 
+        first_global_round_done = self.get_a_shared_value("first_global_round_done")
+        if first_global_round_done is None:
+            # Consider possible pretrained model
+            if self.to_start_from_pretrained_model:
+                existing_pretrained_models = self.trainer.list_saved_models()
+                target_num_rounds = Config().app.repeat
+
+                closest_pretrained_model_round_idx = if_closest_pretrained_model_exists(
+                    existing_pretrained_models,
+                    target_num_rounds
+                )
+                if closest_pretrained_model_round_idx is not None:
+                    closest_pretrained_model_filename = Config().app.trainer.model_name
+                    closest_pretrained_model_filename += f"-r{closest_pretrained_model_round_idx}"
+
+                    self.trainer.load_model(closest_pretrained_model_filename)
+                    logging.info(f"Using pretrained model named "
+                                 f"{closest_pretrained_model_filename}.")
+
+            self.set_a_shared_value(
+                key="first_global_round_done",
+                value=0  # placeholder
+            )
+
+        # otherwise the trainer's model is just the last-round one, or
+        # a randomly initialzied one when this is the first global round)
         base_weights = self.trainer.extract_weights()
-        if round_idx == 0 and chunk_idx == 0:
+        if first_global_round_done is None and chunk_idx == 0:
             _chunks = self.weights_to_chunks(base_weights, padding=False)
             logging.info(f"[Debug] Initialized state, "
-                         f"first six: {[round(e, 4) for e in _chunks[0][:6]]}, "
-                         f"last six: {[round(e, 4) for e in _chunks[0][-6:]]}.")
+                         f"first 6: {[round(e, 4) for e in _chunks[0][:6]]}, "
+                         f"last 6: {[round(e, 4) for e in _chunks[0][-6:]]}.")
 
         if self.aggregate_delta:
             base_weights_chunks = self.weights_to_chunks(
@@ -125,46 +198,57 @@ class AppServer(base.AppServer, Payload):
                 padding=False
             )
             base_weight_chunk = base_weights_chunks[chunk_idx]
-            weight_chunk += base_weight_chunk
+            chunk += base_weight_chunk  # now it becomes weight chunks
+        self.set_a_shared_value(
+            key=["output", round_idx, chunk_idx],
+            value=chunk,
+        )
 
-        if self.debug or self.aggregate_delta:
-            self.set_a_shared_value(
-                key=["output", round_idx, chunk_idx],
-                value=weight_chunk,
+        # see if it is the last chunks
+        keys = self.prefix_to_dict(prefix=["output", round_idx]).keys()
+        if len(keys) == self.num_chunks:
+            weight_chunks = []
+            for chunk_idx in range(self.num_chunks):
+                data = self.get_a_shared_value(
+                    key=['output', round_idx, chunk_idx]
+                )
+                self.delete_a_shared_value(
+                    key=['output', round_idx, chunk_idx]
+                )
+                weight_chunks.append(data.tolist())
+
+            non_trainable_dict = self.extract_non_trainable_dict(base_weights)
+            weights = self.chunks_to_weights(
+                chunks=weight_chunks,
+                non_trainable_dict=non_trainable_dict,
+                stripping=False
             )
-            keys = self.prefix_to_dict(prefix=["output", round_idx]).keys()
-            if len(keys) == self.num_chunks:
-                chunks = []
-                for chunk_idx in range(self.num_chunks):
-                    data = self.get_a_shared_value(
-                        key=['output', round_idx, chunk_idx]
-                    )
-                    self.delete_a_shared_value(
-                        key=['output', round_idx, chunk_idx]
-                    )
-                    chunks.append(data.tolist())
 
-                non_trainable_dict = self.extract_non_trainable_dict(base_weights)
-                weights = self.chunks_to_weights(
-                    chunks=chunks,
-                    non_trainable_dict=non_trainable_dict,
-                    stripping=False
-                )
+            # update the global model unconditionally
+            # (it is not for dispatching but model debug and saving)
+            self.trainer.load_weights(weights)
 
-                self.debug_and_test(
-                    agg_res={'chunks': chunks, 'weights': weights},
-                    involved_clients=involved_clients,
-                    log_prefix_str=log_prefix_str,
-                    round_idx=round_idx,
-                    chunk_idx=chunk_idx
-                )
-                # need to memorize the server's global model
-                if self.aggregate_delta:
-                    self.trainer.load_weights(weights)
+            self.debug_and_test(
+                agg_res={'chunks': weight_chunks, 'weights': weights},
+                involved_clients=involved_clients,
+                log_prefix_str=log_prefix_str,
+                round_idx=round_idx,
+                chunk_idx=chunk_idx
+            )
+            # # need to memorize the server's global model
+            # if self.aggregate_delta:
+            #     self.trainer.load_weights(weights)
+
+            logical_round_idx = round_idx + 1
+            if self.model_save_interval > 0 and logical_round_idx \
+                    % self.model_save_interval == 0:
+                model_name = Config().app.trainer.model_name
+                model_name += f"-r{round_idx}"
+                self.trainer.save_model(filename=model_name)
 
         self._publish_a_value(
             channel=[AGG_RES_USED_BY_SERVER, round_idx, chunk_idx],
-            message=weight_chunk,
+            message=chunk,
             mode="large"
         )
 
@@ -195,6 +279,11 @@ class AppClient(base.AppClient, Payload):
 
         self.extract_model_meta(model=self.trainer.model)
 
+        self.to_start_from_pretrained_model = False
+        if hasattr(Config().app.trainer, "start_from_pretrained_model"):
+            self.to_start_from_pretrained_model \
+                = Config().app.trainer.start_from_pretrained_model
+
     def prepare_data(self, args):
         round_idx, chunk_idx, log_prefix_str, logical_client_id = args
 
@@ -214,14 +303,6 @@ class AppClient(base.AppClient, Payload):
                         self.datasource, logical_client_id
                     )
 
-                # debug to see initialization details
-                if round_idx == 0:
-                    weights = self.trainer.extract_weights()
-                    chunks = self.weights_to_chunks(weights, padding=False)
-                    logging.info(f"[Debug] Initialized state,  "
-                                 f"first six: {[round(e, 4) for e in chunks[0][:6]]}, "
-                                 f"last six: {[round(e, 4) for e in chunks[0][-6:]]}.")
-
                 base_weights = self.get_a_shared_value(
                     key=["previous_model", round_idx - 1]
                 )
@@ -230,9 +311,31 @@ class AppClient(base.AppClient, Payload):
                         key=["previous_model", round_idx - 1]
                     )
                     self.trainer.load_weights(base_weights)
-                else:
-                    base_weights = self.trainer.extract_weights()
+                else:  # should be the first global round
 
+                    # Loading pretrained models
+                    if self.to_start_from_pretrained_model:
+                        existing_pretrained_models = self.trainer.list_saved_models()
+                        target_num_rounds = Config().app.repeat
+
+                        closest_pretrained_model_round_idx = if_closest_pretrained_model_exists(
+                            existing_pretrained_models,
+                            target_num_rounds
+                        )
+                        if closest_pretrained_model_round_idx is not None:
+                            closest_pretrained_model_filename = Config().app.trainer.model_name
+                            closest_pretrained_model_filename += f"-r{closest_pretrained_model_round_idx}"
+
+                            self.trainer.load_model(closest_pretrained_model_filename)
+                            logging.info(f"Using pretrained model named "
+                                         f"{closest_pretrained_model_filename}.")
+
+                    # otherwise the trainer's model is just randomly initialized
+                    # Seeing the intial model state
+                    chunks = self.weights_to_chunks(base_weights, padding=False)
+                    logging.info(f"[Debug] Initialized state,  "
+                                 f"first 6: {[round(e, 6) for e in chunks[0][:6]]}, "
+                                 f"last 6: {[round(e, 6) for e in chunks[0][-6:]]}.")
                 try:
                     logging.info("%s FL training started.", log_prefix_str)
                     self.trainer.train(self.trainset, self.sampler)
@@ -347,6 +450,8 @@ class AppClient(base.AppClient, Payload):
                 non_trainable_dict=non_trainable_dict,
                 stripping=False
             )
+            # each physical client receives a global model and stores it as "previous_model" for the next round
+            # the client who stores it and the one who uses it are consistent
             self.set_a_shared_value(
                 key=["previous_model", round_idx],
                 value=weights

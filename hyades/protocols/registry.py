@@ -31,6 +31,7 @@ def get(client_id=None):
     if client_id is None:
         name = "Server protocol"
         registered_dict = registered_server
+        client_id = 0
     else:
         name = "Client protocol"
         registered_dict = registered_clients

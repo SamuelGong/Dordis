@@ -8,7 +8,7 @@ from hyades.apps.federated_learning.datasources import base
 
 
 class DataSource(base.DataSource):
-    def __init__(self, client_id=0, quiet=False):
+    def __init__(self, client_id, quiet=False):
         super().__init__(client_id, quiet)
         _path = Config().app.data.data_path \
             if hasattr(Config().app.data, "data_path") \

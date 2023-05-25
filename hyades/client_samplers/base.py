@@ -1,8 +1,8 @@
 from abc import abstractmethod
 import numpy as np
 from hyades.config import Config
-from hyades.utils.share_memory_handler \
-    import ShareBase, SAMPLED_CLIENTS, TRACE_RELATED
+from sastream.utils.share_memory_handler \
+    import ShareBase, SAMPLED_CLIENTS, TRACE_RELATED, NEIGHBORS_DICT
 
 
 class ClientSampler(ShareBase):
@@ -28,6 +28,7 @@ class ClientSamplePlugin(ShareBase):
         ShareBase.__init__(self, client_id=client_id)
         self.sampled_clients_cached = {}
         self.trace_related_cached = {}
+        self.neighbors_dict_cached = {}
 
     def client_id_transform(self, client_id, round_idx=None,
                             sampled_clients=None, mode="to_logical"):
@@ -58,6 +59,18 @@ class ClientSamplePlugin(ShareBase):
             sampled_clients = self.sampled_clients_cached[round_idx]
 
         return sampled_clients
+
+    def fast_get_neighbors_dict(self, round_idx):
+        # hopefully somehow reduce redis pressure
+        if round_idx not in self.neighbors_dict_cached:
+            neighbors_dict = self.get_a_shared_value(
+                key=[NEIGHBORS_DICT, round_idx]
+            )
+            self.neighbors_dict_cached[round_idx] = neighbors_dict
+        else:
+            neighbors_dict = self.neighbors_dict_cached[round_idx]
+
+        return neighbors_dict
 
     def get_num_sampled_clients(self, round_idx):
         return len(self.fast_get_sampled_clients(round_idx))

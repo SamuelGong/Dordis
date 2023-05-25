@@ -186,8 +186,9 @@ class Server(ClientSamplePlugin):
                     self.protocol.delete_a_status(key=key)
                 break
 
-    def start_scheduler(self):
-        self.scheduler.schedule()
+    def start_scheduler(self, starting_round=0):
+        logging.info(f"Starting scheduling from Round {starting_round}")
+        self.scheduler.schedule(starting_round=starting_round)
 
         message = 'Closing the server.'
         self.close(message=message)
@@ -344,8 +345,20 @@ class Server(ClientSamplePlugin):
 
         if len(self.clients) >= self.init_scale and not self.initialized:
             self.initialized = True
-            logging.info("%s Starting working.", self.log_prefix_str)
-            t = threading.Thread(target=self.start_scheduler)
+            starting_round = 0
+            if Config().app.type == "federated_learning" \
+                    and self.app.if_start_from_pretrained_model():
+                closest_pretrained_model_round_idx \
+                    = self.app.if_closest_pretrained_model_exists()
+                if closest_pretrained_model_round_idx is not None:
+                    starting_round = closest_pretrained_model_round_idx + 1
+
+            logging.info(f"{self.log_prefix_str} "
+                         f"Starting scheduler from {starting_round}.")
+            t = threading.Thread(
+                target=self.start_scheduler,
+                args=(starting_round,)
+            )
             t.start()
 
     def remove_client(self, client_id):
