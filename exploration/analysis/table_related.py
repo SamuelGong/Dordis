@@ -14,6 +14,14 @@ def print_a_metric_dim_3(formatted_data, metric, params=None):
 
             data_text = []
             for idx, item in enumerate(data):
+                item_str = str(item)
+                if metric == "traffic":
+
+                    if item >= 1024:
+                        item_str = str(round(item / 1024, 2))
+                        item_str += "G"
+                    else:
+                        item_str += "M"
                 if percent_dict and idx in percent_dict:
                     baseline = data[percent_dict[idx]]
                     quotient = item / baseline
@@ -21,11 +29,11 @@ def print_a_metric_dim_3(formatted_data, metric, params=None):
                     quotient *= 100
                     quotient = round(quotient)
                     if quotient == 0:
-                        data_text.append(str(item))
+                        data_text.append(item_str)
                     else:
-                        data_text.append(str(item) + f"({quotient}%)")
+                        data_text.append(item_str + f"({quotient}%)")
                 else:
-                    data_text.append(str(item))
+                    data_text.append(item_str)
 
             text = "/ ".join(data_text)
             text_list.append(text)

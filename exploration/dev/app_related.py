@@ -362,7 +362,7 @@ def remote_execution(command, args):
         execution_plan_list.append((execution_plan,))
 
     engine = ExecutionEngine()
-    last_response = engine.run(execution_plan_list)
+    last_response = engine.run(execution_plan_list, 4)
     with open(last_response_path, 'w') as fout:
         json.dump(last_response, fout, indent=4)
 
@@ -522,7 +522,7 @@ def simulation(command, args):
         execution_plan_list.append((execution_plan,))
 
     engine = ExecutionEngine()
-    last_response = engine.run(execution_plan_list)
+    last_response = engine.run(execution_plan_list, 4)
     with open(last_response_path, 'w') as fout:
         json.dump(last_response, fout, indent=4)
 

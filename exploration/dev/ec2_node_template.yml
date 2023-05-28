@@ -6,7 +6,7 @@ BlockDeviceMappings:
     DeleteOnTermination: true
     Encrypted: false
     # GiB
-    VolumeSize: 40  # may need modification
+    VolumeSize: 60  # may need modification
     VolumeType: gp2
 KeyName: MyKeyPair
 

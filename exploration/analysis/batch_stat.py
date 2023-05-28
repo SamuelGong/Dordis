@@ -272,7 +272,7 @@ def calc_privacy_loss_accumulated(method, dropout_info,
                     1 - num_dropped_client / num_sampled_client
                 )
             )
-        elif method == "Con":
+        elif "Con" in method:
             pessimistic_dropout_tolerated_frac \
                 = privacy_params["pessimistic_dropout_tolerated_frac"]
             actual_target_num_clients = num_sampled_client

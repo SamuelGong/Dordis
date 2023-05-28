@@ -61,21 +61,24 @@ def stacked_bar_plot(x_label, y_label, data, figure_file_name,
 
     # data preprocessing
     max_bar_height = -1
+    bar_height_dict = {}  # for the use of percentage_first_element
     for group, group_dict in data.items():
+        bar_height_dict[group] = {}
         for member, member_dict in group_dict.items():
             bottom = 0
             for element, value in member_dict.items():
                 bottom += value
+            bar_height_dict[group][member] = bottom
             if bottom > max_bar_height:
                 max_bar_height = bottom
 
     if customized_params and 'yaxis_time' in customized_params \
             and customized_params['yaxis_time']:
         time_division_factor = 1.0
-        if 60 <= max_bar_height < 3600:
+        if 60 <= max_bar_height < 7200:
             time_division_factor = 60
             y_label += ' (min)'
-        elif max_bar_height >= 3600:
+        elif max_bar_height >= 7200:
             time_division_factor = 3600
             y_label += ' (h)'
         else:
@@ -85,6 +88,7 @@ def stacked_bar_plot(x_label, y_label, data, figure_file_name,
             for member, member_dict in group_dict.items():
                 for element, value in member_dict.items():
                     member_dict[element] = value / time_division_factor
+                bar_height_dict[group][member] /= time_division_factor
         max_bar_height /= time_division_factor
 
     first_group = data[list(data.keys())[0]]
@@ -107,6 +111,11 @@ def stacked_bar_plot(x_label, y_label, data, figure_file_name,
     if "hatch_density" in customized_params:
         hatch_density = customized_params["hatch_density"]
     mpl.rcParams['hatch.linewidth'] = 0.3
+    percentage_first_element = False
+    if customized_params \
+            and "percentage_first_element" in customized_params:
+        percentage_first_element = customized_params["percentage_first_element"]
+
     for group, group_dict in data.items():
         member_cnt = 0
         group_center = group_cnt
@@ -157,10 +166,40 @@ def stacked_bar_plot(x_label, y_label, data, figure_file_name,
                     text_fontsize = fontsize
                     if "text_fontsize" in customized_params:
                         text_fontsize = customized_params["text_fontsize"]
+                    _text_hoffset_factor = text_hoffset_factor
+
+                    if bottom < 10:  # so that small numbers will be "too left"
+                        _text_hoffset_factor *= 0.7
                     ax.text(
-                        member_center - bar_width * text_hoffset_factor,
+                        member_center - bar_width * _text_hoffset_factor,
                         bottom + max_bar_height * text_voffset_factor,
                         str(round(bottom, 2)), fontsize=text_fontsize
+                    )
+                elif element_cnt == 1 \
+                        and num_elements > 1 and percentage_first_element:
+                    text_fontsize = fontsize
+                    args = customized_params["percentage_first_element"]
+                    if "text_fontsize" in args:
+                        text_fontsize = args["text_fontsize"]
+                    _text_hoffset_factor = text_hoffset_factor
+
+                    _text_hoffset_factor_2 = 0.4
+                    if "text_hoffset_factor_2" in args:
+                        _text_hoffset_factor_2 = args["text_hoffset_factor_2"]
+
+                    round_para = 0
+                    if "round_para" in args:
+                        round_para = args["round_para"]
+
+                    overall_bar_height = bar_height_dict[group][member]
+                    percentage = int(round(bottom / overall_bar_height * 100, round_para))
+                    percentage_text = f"{percentage}%"
+                    ax.text(
+                        member_center - bar_width
+                        * _text_hoffset_factor_2 * _text_hoffset_factor,
+                        bottom / 2,
+                        percentage_text, fontsize=text_fontsize,
+                        weight='bold'
                     )
             member_cnt += 1
         group_cnt += 1
@@ -687,6 +726,8 @@ def multi_lat_cdf(label_dict, xlabel, ylabel, filename,
             color = color_scheme[idx]
         data_sorted = sorted(data)
         p = 1. * np.arange(len(data)) / (len(data) - 1)
+        if "%" in ylabel:
+            p *= 100
         ax.plot(data_sorted, p, color=color,
                 label=label, linestyle=linestyle)
         idx += 1
@@ -792,7 +833,7 @@ def plot_twinx_bar(data, x_label, y1_label, y2_label, y1_legend, y2_legend,
     plt.xticks(fontsize=fontsize)
     ax.set_xlabel(x_label, fontsize=fontsize)
 
-    text_hoffset_factor = 0.7  # TODO: avoid hard-coding
+    text_hoffset_factor = 1.0  # TODO: avoid hard-coding
     text_hoffset_factor_2 = 0.8
     if "text_hoffset_factor" in customized_params:
         text_hoffset_factor = customized_params["text_hoffset_factor"]
@@ -864,7 +905,7 @@ def plot_twinx_bar(data, x_label, y1_label, y2_label, y1_legend, y2_legend,
     for tick in ax.yaxis.get_major_ticks():
         tick.label.set_fontsize(fontsize)
     for tick in ax2.yaxis.get_major_ticks():
-        tick.label.set_fontsize(fontsize)
+        tick.label2.set_fontsize(fontsize)
 
     if display_legend:
         legend_params = {
@@ -932,7 +973,7 @@ def _time_sequence_plot(data, boundaries,
                         x_label, y_label, file_name,
                         label_info=None, y_ticklabels=None):
     _fontsize = 10
-    fig = plt.figure(figsize=(6, 2.4), dpi=600)
+    fig = plt.figure(figsize=(1.8, 0.6), dpi=600)
     ax = fig.add_subplot(111)
 
     logical_y_list = list(data.keys())
@@ -947,11 +988,16 @@ def _time_sequence_plot(data, boundaries,
     hatch_density = 2
     hatch_records = {}
 
+    # to calculate utilization (for time_seq_view_2)
+    resource_usage = {
+        entity: 0 for entity in data.keys()
+    }
+    last_end_time = -1
+
     # print(file_name, data)
     for entity, entity_list in data.items():
         y = y_mapping[entity]
         for label_idx, x_start, x_end in entity_list:
-
             if label_info:
                 bar_label = label_info[label_idx]["name"]
                 type_idx = label_info[label_idx]["type_idx"]
@@ -978,11 +1024,23 @@ def _time_sequence_plot(data, boundaries,
             else:
                 bar_label_to_plot.add(bar_label)
 
+            # to calculate utilization (for time_seq_view_2)
+            resource_usage[entity] += x_end - x_start
+            if x_end > last_end_time:
+                last_end_time = x_end
+
             ax.barh(
                 y=y, width=(x_end - x_start), left=x_start,
                 align='center', label=bar_label, color=color,
                 alpha=1.0, edgecolor='black', hatch=hatch
             )
+
+    # to calculate utilization (for time_seq_view_2)
+    # assuming there are only one round
+    total_length = last_end_time - boundaries[0]
+    # print(total_length, resource_usage,
+    #       [1.0 - (a / total_length) for a in resource_usage.values()])
+    # the last term is idle time
 
     for round_start_time in boundaries:
         ax.axvline(x=round_start_time, ymin=0, ymax=1,
@@ -1004,9 +1062,28 @@ def _time_sequence_plot(data, boundaries,
     ax.set_xlabel(x_label, fontsize=_fontsize)
 
     handles, labels = ax.get_legend_handles_labels()
-    ax.legend(handles, labels, bbox_to_anchor=(1.0, 1.5),
-              ncol=(len(labels) - 1) // 5 + 1, frameon=False)
+    labels, handles = zip(*sorted(zip(labels, handles), key=lambda t: t[0]))
+    # TODO: for temporary use
+
+    ncol = 2
+    bbox_to_anchor = (0.4, 1.1)
+    if len(labels) >= 3:
+        ncol = 3
+        nrow = (len(labels) - 1) // 3 + 1
+
+        if nrow == 2:
+            bbox_to_anchor = (0.4, 1.2)
+        elif nrow == 3:
+            bbox_to_anchor = (0.4, 1.3)
+        elif nrow == 4:
+            bbox_to_anchor = (0.4, 1.4)
+
+    ax.legend(handles, labels, bbox_to_anchor=bbox_to_anchor, loc="center",
+              ncol=ncol, frameon=False)
+    # ax.legend(handles, labels, bbox_to_anchor=(1.0, 1.5), loc="center",
+    #           ncol=(len(labels) - 1) // 5 + 1, frameon=False)
     fig.savefig(file_name, bbox_inches='tight', pad_inches=0.0)
+    fig.savefig(file_name + '.pdf', bbox_inches='tight', pad_inches=0.0)
 
 
 def time_sequence_plot(task_folder, result_dict, label_info=None):
@@ -1021,6 +1098,10 @@ def time_sequence_plot(task_folder, result_dict, label_info=None):
     chunk_info = {}
 
     for round_idx, round_dict in coordinator_dict.items():
+        # TODO: this is temporary chagne
+        if round_idx > 0:
+            break
+
         start_time = round_dict['overall']["start_time"]
         start_time_list.append(start_time)
 
@@ -1029,7 +1110,7 @@ def time_sequence_plot(task_folder, result_dict, label_info=None):
                 data[chunk_idx] = []
             if chunk_idx not in chunk_info:
                 chunk_info[chunk_idx] = {
-                    'name': f"chunk {chunk_idx}",
+                    'name': f"Chunk {chunk_idx}",
                     'type_idx': chunk_idx
                 }
 
@@ -1062,7 +1143,7 @@ def time_sequence_plot(task_folder, result_dict, label_info=None):
     _time_sequence_plot(
         data=data,
         boundaries=start_time_list,
-        x_label="Time",
+        x_label="Time (s)",
         y_label="Chunk ID",
         file_name=file_name,
         label_info=label_info
@@ -1071,7 +1152,7 @@ def time_sequence_plot(task_folder, result_dict, label_info=None):
     _time_sequence_plot(
         data=data_2,
         boundaries=start_time_list,
-        x_label="Time",
+        x_label="Time (s)",
         y_label="Resource",
         file_name=file_name + '_view_2',
         label_info=chunk_info,

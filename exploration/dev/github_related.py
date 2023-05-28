@@ -49,7 +49,7 @@ def initialize(launch_result_path, local_private_key_path,
         execution_plan_list.append((execution_plan,))
 
     engine = ExecutionEngine()
-    last_response = engine.run(execution_plan_list)
+    last_response = engine.run(execution_plan_list, 4)
     with open(last_response_path, 'w') as fout:
         json.dump(last_response, fout, indent=4)
 
