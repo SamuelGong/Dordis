@@ -1,7 +1,7 @@
 # The cluster plan
 server:
   name: hyades-coordinator
-  type: c5.4xlarge
+  type: r5.4xlarge
   region: us-east-2
 client_template:
   type_list:
