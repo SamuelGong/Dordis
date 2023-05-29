@@ -8,7 +8,7 @@ import copy
 
 from utils import get_chunks_idx, get_chunks_idx_with_mod
 
-project_name = "SAStream"
+project_name = "Hyades"
 exploration_dir_rel = "exploration"
 dev_dir_rel = "dev"
 conda_env_name = project_name.lower()

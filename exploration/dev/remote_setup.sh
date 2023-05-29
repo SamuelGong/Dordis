@@ -1,6 +1,6 @@
 #!/bin/bash
 
-GITHUB_REPO='git@github.com:SamuelGong/SAStream.git'
+GITHUB_REPO='git@github.com:SamuelGong/Hyades.git'
 REPO_BRANCH='main'
 pip install -q paramiko
 
