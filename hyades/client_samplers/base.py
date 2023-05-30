@@ -1,7 +1,7 @@
 from abc import abstractmethod
 import numpy as np
 from hyades.config import Config
-from sastream.utils.share_memory_handler \
+from hyades.utils.share_memory_handler \
     import ShareBase, SAMPLED_CLIENTS, TRACE_RELATED, NEIGHBORS_DICT
 
 

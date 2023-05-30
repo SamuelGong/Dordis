@@ -7,10 +7,10 @@ import numpy as np
 from functools import reduce
 from multiprocessing import cpu_count
 from multiprocessing.pool import ThreadPool as Pool
-from sastream.utils.share_memory_handler \
+from hyades.utils.share_memory_handler \
     import ShareBase, SCHEDULE, redis_pool, \
     SAMPLED_CLIENTS, BREAK_SCHEDULER_LOOP
-from sastream.config import Config
+from hyades.config import Config
 
 # N_CORES = min(cpu_count(), 16)
 N_CORES = cpu_count()
@@ -40,9 +40,9 @@ class PhaseNodePerRound:
 
 
 class Scheduler(ShareBase):
-    def __init__(self, sastream_instance, log_prefix_str):
+    def __init__(self, hyades_instance, log_prefix_str):
         super(Scheduler, self).__init__(client_id=0)
-        self.sastream_server = sastream_instance
+        self.hyades_server = hyades_instance
         self.log_prefix_str = log_prefix_str
         self.final_node_id = None
         self.round_dict = {}
@@ -197,11 +197,11 @@ class Scheduler(ShareBase):
 
     def new_a_round(self, round_idx, num_chunks, presampling=False):
         if presampling:  # sampling clients
-            available_clients = self.sastream_server.client_manager.get_available_clients()
+            available_clients = self.hyades_server.client_manager.get_available_clients()
             logging.info(f"{self.log_prefix_str} [Round {round_idx}] "
                          f"Available clients: {available_clients}.")
 
-            self.sastream_server.client_sampler.sample(
+            self.hyades_server.client_sampler.sample(
                 candidates=available_clients,
                 # actual candidates will be determined if client_sampler is trace_driven
                 round_idx=round_idx,
@@ -225,7 +225,7 @@ class Scheduler(ShareBase):
             for leaf_phase_id in self.leaf_phases:
                 # leaf_node = self.round_dict[round_idx][leaf_phase_id]
                 for chunk_idx in range(self.num_chunks):
-                    self.sastream_server.protocol.execute_a_task(
+                    self.hyades_server.protocol.execute_a_task(
                         task_info=(round_idx, chunk_idx, leaf_phase_id)
                     )
         else:
@@ -284,7 +284,7 @@ class Scheduler(ShareBase):
                                 phase_idx=_phase_idx
                             )
                             if resource_available:
-                                self.sastream_server.protocol.execute_a_task(
+                                self.hyades_server.protocol.execute_a_task(
                                     task_info=(round_idx, _chunk_idx, _phase_idx)
                                 )
 
@@ -321,7 +321,7 @@ class Scheduler(ShareBase):
                         # second conditions: when it reaches the final chunk
                         if chunk_idx == self.num_chunks - 1:
                             for target_chunk in range(self.num_chunks):
-                                self.sastream_server.protocol.execute_a_task(
+                                self.hyades_server.protocol.execute_a_task(
                                     task_info=(round_idx, target_chunk, successor_phase_idx)
                                 )
                     else:
@@ -335,6 +335,6 @@ class Scheduler(ShareBase):
                         )
 
                         if resource_available:
-                            self.sastream_server.protocol.execute_a_task(
+                            self.hyades_server.protocol.execute_a_task(
                                 task_info=(round_idx, chunk_idx, successor_phase_idx)
                             )

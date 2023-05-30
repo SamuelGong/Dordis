@@ -3,25 +3,25 @@ import gc
 import logging
 import numpy as np
 import multiprocessing as mp
-from sastream.config import Config
-from sastream.protocols import plaintext
+from hyades.config import Config
+from hyades.protocols import plaintext
 from networkx.generators.harary_graph import *
-from sastream.protocols.const import SecAggConst
-from sastream.utils.misc import plaintext_add, \
+from hyades.protocols.const import SecAggConst
+from hyades.utils.misc import plaintext_add, \
     plaintext_aggregate, get_chunks_idx
-from sastream.primitives.key_agreement \
+from hyades.primitives.key_agreement \
     import registry as key_agreement_registry
-from sastream.primitives.secret_sharing \
+from hyades.primitives.secret_sharing \
     import registry as secret_sharing_registry
-from sastream.primitives.authenticated_encryption \
+from hyades.primitives.authenticated_encryption \
     import registry as authenticated_encryption_registry
-from sastream.primitives.pseudorandom_generator \
+from hyades.primitives.pseudorandom_generator \
     import registry as pseudorandom_generator_registry
-from sastream.primitives.utils \
+from hyades.primitives.utils \
     import rand_bytes, secagg_concatenate, secagg_separate
-from sastream.primitives.differential_privacy\
+from hyades.primitives.differential_privacy\
     .utils.misc import modular_clip
-from sastream.utils.share_memory_handler \
+from hyades.utils.share_memory_handler \
     import SCHEDULE, NEIGHBORS_DICT, NEIGHBORS
 
 N_CPUS = mp.cpu_count()
