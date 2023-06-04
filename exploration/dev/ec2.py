@@ -71,12 +71,20 @@ def generate_client_config(data):
         l = []
         for idx in range(count):
             name = name_prefix + str(total_count + idx)
+            if isinstance(upload_kbps, list):
+                _upload_kbps = upload_kbps[idx]
+            else:
+                _upload_kbps = upload_kbps
+            if isinstance(download_kbps, list):
+                _download_kbps = download_kbps[idx]
+            else:
+                _download_kbps = download_kbps
             l.append({
                 "name": name,
                 "type": type,
                 "region": region,
-                "upload_kbps": upload_kbps[idx],
-                "download_kbps": download_kbps[idx]
+                "upload_kbps": _upload_kbps,
+                "download_kbps": _download_kbps
             })
 
         total_count += count
