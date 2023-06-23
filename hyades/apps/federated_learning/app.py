@@ -331,6 +331,8 @@ class AppClient(base.AppClient, Payload):
                                          f"{closest_pretrained_model_filename}.")
 
                     # otherwise the trainer's model is just randomly initialized
+                    base_weights = self.trainer.extract_weights()
+
                     # Seeing the intial model state
                     chunks = self.weights_to_chunks(base_weights, padding=False)
                     logging.info(f"[Debug] Initialized state,  "
