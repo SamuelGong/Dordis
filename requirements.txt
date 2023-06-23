@@ -8,6 +8,6 @@ scipy
 cryptography
 pycryptodome
 redis
-torch
+torch~=1.11.0
 torchvision
 psutil
