@@ -707,12 +707,12 @@ class ProtocolClient(base.ProtocolClient, PlaintextConst):
             phase_idx=phase_idx,
             logical_client_id=logical_client_id
         )
-        data = self.get_a_shared_value(
-            key=['data', round_idx, chunk_idx]
-        )
 
-        num_sampled_clients = self.get_num_sampled_clients(round_idx=round_idx)
         if hasattr(Config().agg, "quantize"):
+            data = self.get_a_shared_value(
+                key=['data', round_idx, chunk_idx]
+            )
+            num_sampled_clients = self.get_num_sampled_clients(round_idx=round_idx)
             quantization_params = Config().agg.quantize
             padded_num_bits = int(np.ceil(np.log2(num_sampled_clients)))
             data = self.quantize_data(
@@ -735,10 +735,10 @@ class ProtocolClient(base.ProtocolClient, PlaintextConst):
                         log_prefix_str=log_prefix_str
                     )
 
-        self.set_a_shared_value(
-            key=['data', round_idx, chunk_idx],
-            value=data
-        )
+            self.set_a_shared_value(
+                key=['data', round_idx, chunk_idx],
+                value=data
+            )
 
         return {
             "payload": {
@@ -819,12 +819,12 @@ class ProtocolClient(base.ProtocolClient, PlaintextConst):
             phase_idx=phase_idx,
             logical_client_id=logical_client_id
         )
-        agg_res, involved_clients = self.batch_get_shared_values(
-            keys=["agg_res", "involved_clients"],
-            postfix=[round_idx, chunk_idx]
-        )
 
         if hasattr(Config().agg, "quantize"):
+            agg_res, involved_clients = self.batch_get_shared_values(
+                keys=["agg_res", "involved_clients"],
+                postfix=[round_idx, chunk_idx]
+            )
             quantization_params = Config().agg.quantize
             if hasattr(quantization_params, "batch"):
                 agg_res = self.unbatch_data(
@@ -842,10 +842,10 @@ class ProtocolClient(base.ProtocolClient, PlaintextConst):
                 for_addition=False
             )
 
-        self.set_a_shared_value(
-            key=['agg_res', round_idx, chunk_idx],
-            value=agg_res
-        )
+            self.set_a_shared_value(
+                key=['agg_res', round_idx, chunk_idx],
+                value=agg_res
+            )
 
         return {
             "payload": {

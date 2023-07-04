@@ -11,38 +11,38 @@ from collections import OrderedDict
 import logging
 
 
-def create_training_selector(args):
-    return _training_selector(args)
+# To make it runnable in multiprocessing
+TOTAL_ARMS = "total_arms"
+UNEXPLORED = "unexplored"
+SUCCESSFUL_CLIENTS = "successful_clients"
+TRAINING_ROUND = "training_round"
+ROUND_PREFER_DURATION = "round_prefer_duration"
+LAST_UTIL_RECORD = "last_util_record"
+EXPLOIT_UTIL_HISTORY = "exploitUtilHistory"
+EXPLORE_UTIL_HISTORY = "exploreUtilHistory"
+EXPLOIT_CLIENTS = "exploitClients"
+EXPLORE_CLIENTS = "exploreClients"
+BLACKLIST = "blacklist"
+ROUND_THRESHOLD = "round_threshold"
+EXPLORATION = "exploration"
 
 
-class _training_selector(object):
+def create_training_selector(client_id, args, sample_seed=1):
+    return _training_selector(client_id, args, sample_seed)
+
+
+# add ShareBase as parent class to make it runnable in multiprocessing
+class _training_selector(ShareBase):
     """Oort's training selector
     """
-    def __init__(self, args, sample_seed=1):
-        self.totalArms = OrderedDict()
-        self.training_round = 0
-
-        self.exploration = args.exploration_factor
-        self.decay_factor = args.exploration_decay
-        self.exploration_min = args.exploration_min
-        self.alpha = args.exploration_alpha
-
-        self.rng = Random()
-        self.rng.seed(sample_seed)
-        self.unexplored = set()
-        self.round_threshold = args.round_threshold
-        self.round_prefer_duration = float('inf')
-        self.last_util_record = 0
-
-        self.exploitUtilHistory = []
-        self.exploreUtilHistory = []
-        self.exploitClients = []
-        self.exploreClients = []
-        self.successfulClients = set()
-        self.blacklist = None
+    def __init__(self, client_id, args, sample_seed=1):
+        ShareBase.__init__(self, client_id=client_id)
 
         # cannot make args a member, otherwise the selector cannot be pickled
         # (from the need for decoupling testing and training at server)
+        self.decay_factor = args.exploration_decay
+        self.exploration_min = args.exploration_min
+        self.alpha = args.exploration_alpha
         self.sample_window = args.sample_window
         self.pacer_step = args.pacer_step
         self.pacer_delta = args.pacer_delta
@@ -52,86 +52,117 @@ class _training_selector(object):
         self.round_penalty = args.round_penalty
         self.cut_off_util = args.cut_off_util
 
+        self.rng = Random()
+        self.rng.seed(sample_seed)
         np.random.seed(sample_seed)
+
+        self.set_a_shared_value(key=EXPLORATION, value=args.exploration_factor)
+        self.set_a_shared_value(key=ROUND_THRESHOLD, value=args.round_threshold)
+        self.set_a_shared_value(key=TOTAL_ARMS, value=OrderedDict())
+        self.set_a_shared_value(key=UNEXPLORED, value=set())
+        self.set_a_shared_value(key=SUCCESSFUL_CLIENTS, value=set())
+        self.set_a_shared_value(key=TRAINING_ROUND, value=0)
+        self.set_a_shared_value(key=ROUND_PREFER_DURATION, value=float('inf'))
+        self.set_a_shared_value(key=LAST_UTIL_RECORD, value=0)
+        self.set_a_shared_value(key=EXPLOIT_UTIL_HISTORY, value=[])
+        self.set_a_shared_value(key=EXPLORE_UTIL_HISTORY, value=[])
+        self.set_a_shared_value(key=EXPLOIT_CLIENTS, value=[])
+        self.set_a_shared_value(key=EXPLORE_CLIENTS, value=[])
+        self.set_a_shared_value(key=BLACKLIST, value=None)
 
     def register_client(self, clientId, feedbacks):
         # Initiate the score for arms.
         # [score, time_stamp, # of trials, size of client, auxi, duration]
-        if clientId not in self.totalArms:
-            self.totalArms[clientId] = {}
-            self.totalArms[clientId]['reward'] = feedbacks['reward']
-            self.totalArms[clientId]['duration'] = feedbacks['duration']
-            self.totalArms[clientId]['time_stamp'] = self.training_round
-            self.totalArms[clientId]['count'] = 0
-            self.totalArms[clientId]['status'] = True
+        totalArms = self.get_a_shared_value(key=TOTAL_ARMS)
+        training_round = self.get_a_shared_value(key=TRAINING_ROUND)
+        unexplored = self.get_a_shared_value(key=UNEXPLORED)
 
-            self.unexplored.add(clientId)
+        totalArms.update({
+            clientId: {
+                'reward': feedbacks['reward'],
+                'duration': feedbacks['duration'],
+                'time_stamp': training_round,
+                'count': 0,
+                'status': True
+            }
+        })
+        unexplored.add(clientId)
 
-    # Added by Zhifeng for Plato use
+        self.set_a_shared_value(key=TOTAL_ARMS, value=totalArms)
+        self.set_a_shared_value(key=UNEXPLORED, value=unexplored)
+
     def is_reward_updated(self, client_id):
-        return self.totalArms[client_id]['reward']
+        totalArms = self.get_a_shared_value(key=TOTAL_ARMS)
+        return totalArms[client_id]['reward']
 
     def calculateSumUtil(self, clientList):
+        successfulClients = self.get_a_shared_value(key=SUCCESSFUL_CLIENTS)
+        totalArms = self.get_a_shared_value(key=TOTAL_ARMS)
+
         cnt, cntUtil = 1e-4, 0
-
         for client in clientList:
-            if client in self.successfulClients:
+            if client in successfulClients:
                 cnt += 1
-                cntUtil += self.totalArms[client]['reward']
-
+                cntUtil += totalArms[client]['reward']
         return cntUtil / cnt
 
     def pacer(self):
+        exploreUtilHistory = self.get_a_shared_value(key=EXPLORE_UTIL_HISTORY)
+        exploitUtilHistory = self.get_a_shared_value(key=EXPLOIT_UTIL_HISTORY)
+        exploreClients = self.get_a_shared_value(key=EXPLORE_CLIENTS)
+        exploitClients = self.get_a_shared_value(key=EXPLOIT_CLIENTS)
+        training_round = self.get_a_shared_value(key=TRAINING_ROUND)
+        last_util_record = self.get_a_shared_value(key=LAST_UTIL_RECORD)
+        round_threshold = self.get_a_shared_value(key=ROUND_THRESHOLD)
+
         # summarize utility in last epoch
-        lastExplorationUtil = self.calculateSumUtil(self.exploreClients)
-        lastExploitationUtil = self.calculateSumUtil(self.exploitClients)
+        lastExplorationUtil = self.calculateSumUtil(exploreClients)
+        lastExploitationUtil = self.calculateSumUtil(exploitClients)
+        exploreUtilHistory.append(lastExplorationUtil)
+        exploitUtilHistory.append(lastExploitationUtil)
 
-        self.exploreUtilHistory.append(lastExplorationUtil)
-        self.exploitUtilHistory.append(lastExploitationUtil)
-
-        self.successfulClients = set()
-
-        if self.training_round >= 2 * self.pacer_step \
-                and self.training_round % self.pacer_step == 0:
+        if training_round >= 2 * self.pacer_step \
+                and training_round % self.pacer_step == 0:
 
             utilLastPacerRounds = sum(
-                self.
                 exploitUtilHistory[-2 *
                                    self.pacer_step:-self.pacer_step])
             utilCurrentPacerRounds = sum(
-                self.exploitUtilHistory[-self.pacer_step:])
+                exploitUtilHistory[-self.pacer_step:])
 
             # Cumulated statistical utility becomes flat, so we need a bump by relaxing the pacer
             if abs(utilCurrentPacerRounds -
                    utilLastPacerRounds) <= utilLastPacerRounds * 0.1:
-                self.round_threshold = min(
-                    100., self.round_threshold + self.pacer_delta)
-                self.last_util_record = self.training_round - self.pacer_step
+                round_threshold = min(100., round_threshold + self.pacer_delta)
+                last_util_record = training_round - self.pacer_step
                 logging.debug(
                     "[Oort] Training selector: Pacer changes at {} to {}".format(
-                        self.training_round, self.round_threshold))
+                        training_round, round_threshold))
 
             # change sharply -> we decrease the pacer step
             elif abs(utilCurrentPacerRounds -
                      utilLastPacerRounds) >= utilLastPacerRounds * 5:
-                self.round_threshold = max(
-                    self.pacer_delta,
-                    self.round_threshold - self.pacer_delta)
-                self.last_util_record = self.training_round - self.pacer_step
+                round_threshold = max(self.pacer_delta,
+                    round_threshold - self.pacer_delta)
+                last_util_record = training_round - self.pacer_step
                 logging.debug(
                     "[Oort] Training selector: Pacer changes at {} to {}".format(
-                        self.training_round, self.round_threshold))
+                        training_round, round_threshold))
 
             logging.debug(
                 "[Oort] Training selector: utilLastPacerRounds {}, utilCurrentPacerRounds {} in round {}"
                 .format(utilLastPacerRounds, utilCurrentPacerRounds,
-                        self.training_round))
+                        training_round))
 
+        self.set_a_shared_value(key=EXPLORE_UTIL_HISTORY, value=exploreUtilHistory)
+        self.set_a_shared_value(key=EXPLOIT_UTIL_HISTORY, value=exploitUtilHistory)
+        self.set_a_shared_value(key=LAST_UTIL_RECORD, value=last_util_record)
+        self.set_a_shared_value(key=ROUND_THRESHOLD, value=round_threshold)
         logging.info(
             "[Oort] Training selector: Pacer {}: lastExploitationUtil {}, "
             "lastExplorationUtil {}, last_util_record {}"
-            .format(self.training_round, lastExploitationUtil,
-                    lastExplorationUtil, self.last_util_record))
+            .format(training_round, lastExploitationUtil,
+                    lastExplorationUtil, last_util_record))
 
     def update_client_util(self, clientId, feedbacks):
         '''
@@ -139,34 +170,40 @@ class _training_selector(object):
         @ feedbacks['duration']: system utility
         @ feedbacks['count']: times of involved
         '''
-        self.totalArms[clientId]['reward'] = feedbacks['reward']
-        self.totalArms[clientId]['duration'] = feedbacks['duration']
-        self.totalArms[clientId]['time_stamp'] = feedbacks['time_stamp']
-        self.totalArms[clientId]['count'] += 1
-        self.totalArms[clientId]['status'] = feedbacks['status']
+        totalArms = self.get_a_shared_value(key=TOTAL_ARMS)
+        unexplored = self.get_a_shared_value(key=UNEXPLORED)
+        successfulClients = self.get_a_shared_value(key=SUCCESSFUL_CLIENTS)
 
-        self.unexplored.discard(clientId)
-        self.successfulClients.add(clientId)
+        totalArms[clientId]['reward'] = feedbacks['reward']
+        totalArms[clientId]['duration'] = feedbacks['duration']
+        totalArms[clientId]['time_stamp'] = feedbacks['time_stamp']
+        totalArms[clientId]['count'] += 1
+        totalArms[clientId]['status'] = feedbacks['status']
+        unexplored.discard(clientId)
+        successfulClients.add(clientId)
+
+        self.set_a_shared_value(key=TOTAL_ARMS, value=totalArms)
+        self.set_a_shared_value(key=UNEXPLORED, value=unexplored)
+        self.set_a_shared_value(key=SUCCESSFUL_CLIENTS, value=successfulClients)
 
     def get_blacklist(self):
-        blacklist = []
+        totalArms = self.get_a_shared_value(key=TOTAL_ARMS)
 
+        blacklist = []
         if self.blacklist_rounds != -1:
             sorted_client_ids = sorted(
-                list(self.totalArms),
+                list(totalArms),
                 reverse=True,
-                key=lambda k: self.totalArms[k]['count'])
+                key=lambda k: totalArms[k]['count'])
 
             for clientId in sorted_client_ids:
-                if self.totalArms[clientId][
-                        'count'] > self.blacklist_rounds:
+                if totalArms[clientId]['count'] > self.blacklist_rounds:
                     blacklist.append(clientId)
                 else:
                     break
 
             # we need to back up if we have blacklisted all clients
-            predefined_max_len = self.blacklist_max_len * len(
-                self.totalArms)
+            predefined_max_len = self.blacklist_max_len * len(totalArms)
 
             if len(blacklist) > predefined_max_len:
                 logging.warning(
@@ -175,57 +212,64 @@ class _training_selector(object):
 
         return set(blacklist)
 
-    def select_participant(self, num_of_clients, log_prefix_str, feasible_clients=None):
+    def select_participant(self, num_of_clients, log_prefix_str,
+                           feasible_clients=None, seed=None):
         '''
         @ num_of_clients: # of clients selected
         '''
+        totalArms = self.get_a_shared_value(key=TOTAL_ARMS)
+        training_round = self.get_a_shared_value(key=TRAINING_ROUND)
+
         if not num_of_clients:
             return []
         else:
             viable_clients = feasible_clients if feasible_clients is not None else set(
-                [x for x in self.totalArms.keys() if self.totalArms[x]['status']])
-            return self.getTopK(num_of_clients, self.training_round + 1,
-                                viable_clients, log_prefix_str)
+                [x for x in totalArms.keys() if totalArms[x]['status']])
+            return self.getTopK(num_of_clients, training_round + 1,
+                                viable_clients, log_prefix_str, seed)
 
     def update_duration(self, clientId, duration):
-        if clientId in self.totalArms:
-            self.totalArms[clientId]['duration'] = duration
+        totalArms = self.get_a_shared_value(key=TOTAL_ARMS)
+        if clientId in totalArms:
+            totalArms[clientId]['duration'] = duration
+        self.set_a_shared_value(key=TOTAL_ARMS, value=totalArms)
 
     def getTopK(self, numOfSamples, cur_time,
-                feasible_clients, log_prefix_str):
-        self.training_round = cur_time
-        self.blacklist = self.get_blacklist()
+                feasible_clients, log_prefix_str, seed=None):
+        totalArms = self.get_a_shared_value(key=TOTAL_ARMS)
+        round_threshold = self.get_a_shared_value(key=ROUND_THRESHOLD)
+        exploration = self.get_a_shared_value(key=EXPLORATION)
+        unexplored = self.get_a_shared_value(key=UNEXPLORED)
 
+        training_round = cur_time
+        blacklist = self.get_blacklist()
         self.pacer()
 
         # normalize the score of all arms: Avg + Confidence
         scores = {}
         numOfExploited = 0
-        actual_explore_len = 0
-
-        client_list = list(self.totalArms.keys())
+        # actual_explore_len = 0
+        client_list = list(totalArms.keys())
         orderedKeys = [
             x for x in client_list
-            if int(x) in feasible_clients and int(x) not in self.blacklist
+            if int(x) in feasible_clients and int(x) not in blacklist
         ]
 
-        if self.round_threshold < 100.:
+        if round_threshold < 100.:
             sortedDuration = sorted(
-                [self.totalArms[key]['duration'] for key in client_list])
-            self.round_prefer_duration = sortedDuration[min(
-                int(len(sortedDuration) * self.round_threshold / 100.),
+                [totalArms[key]['duration'] for key in client_list])
+            round_prefer_duration = sortedDuration[min(
+                int(len(sortedDuration) * round_threshold / 100.),
                 len(sortedDuration) - 1)]
         else:
-            self.round_prefer_duration = float('inf')
+            round_prefer_duration = float('inf')
 
         moving_reward, staleness, allloss = [], [], {}
-
         for clientId in orderedKeys:
-            if self.totalArms[clientId]['reward'] > 0:
-                creward = self.totalArms[clientId]['reward']
+            if totalArms[clientId]['reward'] > 0:
+                creward = totalArms[clientId]['reward']
                 moving_reward.append(creward)
-                staleness.append(cur_time -
-                                 self.totalArms[clientId]['time_stamp'])
+                staleness.append(cur_time - totalArms[clientId]['time_stamp'])
 
         max_reward, min_reward, range_reward, avg_reward, clip_value = self.get_norm(
             moving_reward, self.clip_bound)
@@ -234,35 +278,35 @@ class _training_selector(object):
 
         for key in orderedKeys:
             # we have played this arm before
-            if self.totalArms[key]['count'] > 0:
-                creward = min(self.totalArms[key]['reward'], clip_value)
+            if totalArms[key]['count'] > 0:
+                creward = min(totalArms[key]['reward'], clip_value)
                 numOfExploited += 1
 
                 sc = (creward - min_reward)/float(range_reward) \
                     + math.sqrt(0.1*math.log(cur_time)
-                                /self.totalArms[key]['time_stamp']) # temporal uncertainty
+                                /totalArms[key]['time_stamp']) # temporal uncertainty
 
-                clientDuration = self.totalArms[key]['duration']
-                if clientDuration > self.round_prefer_duration:
+                clientDuration = totalArms[key]['duration']
+                if clientDuration > round_prefer_duration:
                     sc *= (
-                        (float(self.round_prefer_duration) /
-                         max(1e-4, clientDuration))**self.round_penalty)
+                        (float(round_prefer_duration) /
+                         max(1e-4, clientDuration)) ** self.round_penalty)
 
-                if self.totalArms[key]['time_stamp'] == cur_time:
+                if totalArms[key]['time_stamp'] == cur_time:
                     allloss[key] = sc
 
                 scores[key] = abs(sc)
 
         # Zhifeng's patch and comments
         clientLakes = list(scores.keys())  # scores: explored and feasible clients
-        self.exploration = max(self.exploration * self.decay_factor,
-                               self.exploration_min)
+        exploration = max(exploration * self.decay_factor, self.exploration_min)
         _unexplored = [  # unexplored and feasible
-            x for x in list(self.unexplored) if int(x) in feasible_clients
+            x for x in list(unexplored) if int(x) in feasible_clients
         ]
         # why not the orginal int(numOfSamples * self.exploration):
         # to be friendly when numOfSamples is small--especially for adaption to asynchronous training
-        planned_explore_len = min(len(_unexplored), np.random.binomial(numOfSamples, self.exploration, 1)[0])
+        planned_explore_len = min(len(_unexplored), np.random.binomial(
+            numOfSamples, exploration, 1)[0])
         actual_exploit_len = min(numOfSamples - planned_explore_len, len(clientLakes))
         actual_explore_len = min(numOfSamples - actual_exploit_len, len(_unexplored))
 
@@ -291,39 +335,49 @@ class _training_selector(object):
             # while preseving numerical stability
             totalSc = sum([scores[key] for key in tempPickedClients])
             if totalSc == 0:
-                self.exploitClients = list(
-                    np.random.choice(
-                        tempPickedClients,
-                        actual_exploit_len,
-                        replace=False)
-                        .astype(object))  # Zhifeng's patch: not numpy.int
+                p = None
             else:
-                self.exploitClients = list(
+                p = [scores[key] / totalSc for key in tempPickedClients]
+
+            if seed is None:
+                exploitClients = list(
                     np.random.choice(
                         tempPickedClients,
                         actual_exploit_len,
-                        p=[scores[key] / totalSc for key in tempPickedClients],
+                        p=p,
                         replace=False)
-                        .astype(object))  # Zhifeng's patch: not numpy.int
+                        .astype(object)
+                )  # Zhifeng's patch: not numpy.int
+            else:  # for Lotto's verifiable sampling
+                logging.info(f"{log_prefix_str} Determining exploitClients "
+                             f"using seed {seed}.")
+                rng = np.random.default_rng(seed=seed)
+                exploitClients = list(
+                    rng.choice(
+                        tempPickedClients,
+                        actual_exploit_len,
+                        p=p,
+                        replace=False)
+                        .astype(object)
+                )  # Zhifeng's patch: not numpy.int
         else:
-            self.exploitClients = list()
+            exploitClients = list()
             augment_factor = 0
 
         # exploration
         if actual_explore_len > 0:
             init_reward = {}
             for cl in _unexplored:
-                init_reward[cl] = self.totalArms[cl]['reward']
-                clientDuration = self.totalArms[cl]['duration']
+                init_reward[cl] = totalArms[cl]['reward']
+                clientDuration = totalArms[cl]['duration']
 
-                if clientDuration > self.round_prefer_duration:
-                    init_reward[cl] *= (
-                        (float(self.round_prefer_duration) /
-                         max(1e-4, clientDuration))**self.round_penalty)
+                if clientDuration > round_prefer_duration:
+                    init_reward[cl] *= ((float(round_prefer_duration) /
+                         max(1e-4, clientDuration)) ** self.round_penalty)
 
             # prioritize w/ some rewards (i.e., size)
             actual_explore_len = min(len(_unexplored),
-                             numOfSamples - len(self.exploitClients))
+                             numOfSamples - len(exploitClients))
 
             # Zhifeng's patch for load balancing
             keys = list(init_reward.keys())
@@ -333,49 +387,63 @@ class _training_selector(object):
 
             pickedUnexploredClients = sorted(
                 init_reward, key=init_reward.get,
-                reverse=True)[:min(int(self.sample_window *
-                                       actual_explore_len), len(init_reward))]
-
+                reverse=True)[:min(int(self.sample_window
+                                       * actual_explore_len), len(init_reward))]
             unexploredSc = float(
                 sum([init_reward[key] for key in pickedUnexploredClients]))
 
             # Zhifeng's patch: avoid probabilities do not sum to 1
             # while preseving numerical stability
             if unexploredSc == 0:
-                pickedUnexplored = list(
-                    np.random.choice(pickedUnexploredClients,
-                                     actual_explore_len,
-                                     replace=False)
-                        .astype(object))  # Zhifeng's patch: not numpy.int
+                p = None
             else:
+                p = [
+                    init_reward[key] / unexploredSc
+                    for key in pickedUnexploredClients
+                ]
+
+            if seed is None:
                 pickedUnexplored = list(
                     np.random.choice(pickedUnexploredClients,
                                      actual_explore_len,
-                                     p=[
-                                         init_reward[key] / unexploredSc
-                                         for key in pickedUnexploredClients
-                                     ],
-                                     replace=False)
-                        .astype(object)) # Zhifeng's patch: not numpy.int
+                                     p=p,
+                                     replace=False).astype(object)
+                ) # Zhifeng's patch: not numpy.int
+            else:  # for Lotto's verifiable sampling
+                logging.info(f"{log_prefix_str} Determining pickedUnexplored "
+                             f"using seed {seed}.")
+                rng = np.random.default_rng(seed=seed)
+                pickedUnexplored = list(
+                    rng.choice(pickedUnexploredClients,
+                                     actual_explore_len,
+                                     p=p,
+                                     replace=False).astype(object)
+                )  # Zhifeng's patch: not numpy.int
 
-            self.exploreClients = pickedUnexplored
+            exploreClients = pickedUnexplored
         else:
-            self.exploreClients = list()
+            exploreClients = list()
 
-        pickedClients = self.exploreClients + self.exploitClients
+        pickedClients = exploreClients + exploitClients
         top_k_score = []
         for i in range(min(3, len(pickedClients))):
             clientId = pickedClients[i]
-            _score = (self.totalArms[clientId]['reward'] -
+            _score = (totalArms[clientId]['reward'] -
                       min_reward) / range_reward
             _staleness = self.alpha * (
-                (cur_time - self.totalArms[clientId]['time_stamp']) -
+                (cur_time - totalArms[clientId]['time_stamp']) -
                 min_staleness
             ) / float(
                 range_staleness
             )  #math.sqrt(0.1*math.log(cur_time)/max(1e-4, self.totalArms[clientId]['time_stamp']))
-            top_k_score.append((self.totalArms[clientId], [_score,
-                                                           _staleness]))
+            top_k_score.append((totalArms[clientId], [_score, _staleness]))
+
+        self.set_a_shared_value(key=TRAINING_ROUND, value=training_round)
+        self.set_a_shared_value(key=BLACKLIST, value=blacklist)
+        self.set_a_shared_value(key=ROUND_PREFER_DURATION, value=round_prefer_duration)
+        self.set_a_shared_value(key=EXPLORATION, value=exploration)
+        self.set_a_shared_value(key=EXPLOIT_CLIENTS, value=exploitClients)
+        self.set_a_shared_value(key=EXPLORE_CLIENTS, value=exploreClients)
 
         logging.info(f"{log_prefix_str} [Oort] "
                      f"[Debug] planned_explore_len: {planned_explore_len}, "
@@ -393,28 +461,28 @@ class _training_selector(object):
             "exploration {}, round_threshold {}, sampled score is {}"
             .format(log_prefix_str, cur_time, numOfExploited,
                     augment_factor / max(1e-4, actual_exploit_len), actual_explore_len,
-                    len(self.unexplored), self.exploration,
-                    self.round_threshold, top_k_score))
-
+                    len(unexplored), exploration, round_threshold, top_k_score))
         return pickedClients
 
     def get_median_reward(self):
+        totalArms = self.get_a_shared_value(key=TOTAL_ARMS)
+        blacklist = self.get_a_shared_value(key=BLACKLIST)
+
         feasible_rewards = [
-            self.totalArms[x]['reward'] for x in list(self.totalArms.keys())
-            if int(x) not in self.blacklist
+            totalArms[x]['reward'] for x in list(totalArms.keys())
+            if int(x) not in blacklist
         ]
 
         # we report mean instead of median
         if len(feasible_rewards) > 0:
             return sum(feasible_rewards) / float(len(feasible_rewards))
-
         return 0
 
     def get_client_reward(self, armId):
-        return self.totalArms[armId]
+        return self.get_a_shared_value(key=TOTAL_ARMS)[armId]
 
     def getAllMetrics(self):
-        return self.totalArms
+        return self.get_a_shared_value(key=TOTAL_ARMS)
 
     def get_norm(self, aList, clip_bound=0.95, thres=1e-4):
         aList.sort()
@@ -430,12 +498,13 @@ class _training_selector(object):
 
 
 class ClientSampler(base.ClientSampler):
-    def __init__(self, log_prefix_str):
-        super(ClientSampler, self).__init__(log_prefix_str)
+    def __init__(self, client_id):
+        super(ClientSampler, self).__init__(client_id)
         # seed = Config().clients.sample.seed
         # np.random.seed(seed)
 
         self.internal_selector = create_training_selector(
+            client_id,
             Config().clients.sample.params
         )
 
@@ -481,7 +550,7 @@ class ClientSampler(base.ClientSampler):
         # logging.info(f"[Oort] [Debug] Client {client_id} "
         #              f"updated with meta: {feedback}.")
 
-    def pull_status_quo(self, clients):
+    def pull_status_quo(self, clients, log_prefix_str):
         registered_clients = []
         updated_clients = []
 
@@ -523,7 +592,8 @@ class ClientSampler(base.ClientSampler):
                 value=client_dict
             )
 
-        logging.info(f"[Oort] Status pulled. Clients registered: {registered_clients}, "
+        logging.info(f"{log_prefix_str} [Oort] Status pulled. "
+                     f"Clients registered: {registered_clients}, "
                      f"clients updated: {updated_clients}.")
 
         # for debug use
@@ -531,7 +601,7 @@ class ClientSampler(base.ClientSampler):
         clean_dict = {
             k: round(all_dict[k]['reward'], 2) for k in all_dict.keys()
         }
-        logging.info(f"[Oort] [Debug] {clean_dict}.")
+        logging.info(f"{log_prefix_str} [Oort] [Debug] {clean_dict}.")
 
     def get_num_sampled_clients_upperbound(self):
         return self.num_sampled_client_upperbound
@@ -541,9 +611,10 @@ class ClientSampler(base.ClientSampler):
         # randomness for the server
         # return self.sampling_rate_upperbound
 
-    def sample(self, candidates, round_idx, log_prefix_str):
+    def sample(self, candidates, round_idx, log_prefix_str,
+               seed=None, save_result=True):
         # first pull new state
-        self.pull_status_quo(candidates)
+        self.pull_status_quo(candidates, log_prefix_str)
 
         # then select
         if self.mode == "fixed_sample_size":
@@ -556,15 +627,19 @@ class ClientSampler(base.ClientSampler):
             sampled_clients = self.internal_selector.select_participant(
                 num_of_clients=sample_size,
                 log_prefix_str=log_prefix_str,
-                feasible_clients=candidates
+                feasible_clients=candidates,
+                seed=seed
             )
 
             # for serialization in multiprocessing
             sampled_clients = sorted(sampled_clients)
-            self.set_a_shared_value(
-                key=[SAMPLED_CLIENTS, round_idx],
-                value=sampled_clients
-            )
+            if save_result:
+                self.set_a_shared_value(
+                    key=[SAMPLED_CLIENTS, round_idx],
+                    value=sampled_clients
+                )
+            else:
+                return sampled_clients
         else:  # has to stop due to privacy and any other practical concerns
             logging.info(f"[Oort] No clients are sampled "
                          f"due to insufficient candidates "
