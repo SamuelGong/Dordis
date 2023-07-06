@@ -22,6 +22,7 @@ class Trainer(base.Trainer):
         custom_train = getattr(self, "train_model", None)
 
         retry_time = 0
+        log_interval = 10
         while True:
             try:
                 # if callable(custom_train):
@@ -128,8 +129,7 @@ class Trainer(base.Trainer):
                 if isinstance(training_exception, RuntimeError):
                     # accommodate for "CUDA out of memory."
                     # TODO: avoid hard-coding
-                    sleep_interval = 1
-                    log_interval = 10 * sleep_interval
+                    sleep_interval = random.randint(3, 10)
                     if retry_time % log_interval == 0:
                         logging.info(f"Training on client #{self.client_id} failed due to "
                                      f"RuntimeError: {str(training_exception)}. "
@@ -158,6 +158,7 @@ class Trainer(base.Trainer):
         self.model.eval()
 
         retry_time = 0
+        log_interval = 10
         while True:
             try:
                 custom_test = getattr(self, "test_model", None)
@@ -204,8 +205,7 @@ class Trainer(base.Trainer):
                 if isinstance(testing_exception, RuntimeError):
                     # accommodate for "CUDA out of memory."
                     # TODO: avoid hard-coding
-                    sleep_interval = 1
-                    log_interval = 10 * sleep_interval
+                    sleep_interval = random.randint(3, 10)
                     if retry_time % log_interval == 0:
                         logging.info(f"Testing on client #{self.client_id} failed due to "
                                      f"RuntimeError: {str(testing_exception)}. "
@@ -233,6 +233,7 @@ class Trainer(base.Trainer):
         config = Config().app.trainer._asdict()
 
         retry_time = 0
+        log_interval = 10
         while True:
             try:
                 model_to_test = self.model
@@ -284,8 +285,7 @@ class Trainer(base.Trainer):
                 if isinstance(testing_exception, RuntimeError):
                     # accommodate for "CUDA out of memory."
                     # TODO: avoid hard-coding
-                    sleep_interval = 1
-                    log_interval = 10 * sleep_interval
+                    sleep_interval = random.randint(3, 10)
                     if retry_time % log_interval == 0:
                         logging.info(f"Testing on the server failed due to "
                                      f"RuntimeError: {str(testing_exception)}. "
