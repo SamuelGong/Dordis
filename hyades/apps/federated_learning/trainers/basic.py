@@ -3,6 +3,7 @@ import os
 import gc
 import time
 import torch
+import random
 import torch.nn as nn
 import numpy as np
 from hyades.config import Config
@@ -19,15 +20,11 @@ class Trainer(base.Trainer):
         self.model = model
 
     def train_process(self, config, trainset, sampler, cut_layer=None):
-        custom_train = getattr(self, "train_model", None)
-
         retry_time = 0
         log_interval = 10
+
         while True:
             try:
-                # if callable(custom_train):
-                #     self.train_model(config, trainset, sampler.get(), cut_layer)
-                # else:
                 if True:
                     batch_size = config['batch_size']
                     epochs = config['epochs']
