@@ -1,7 +1,9 @@
 # Hyades
 
-This repository contains the evaluation artifacts of our arXiv'22 paper
-[Taming Client Dropout and Improving Efficiency for Distributed Differential Privacy in Federated Learning](https://arxiv.org/pdf/2209.12528.pdf).
+This repository contains the evaluation artifacts of our EuroSys'24 paper *Efficient Federated Learning with Dropout-Resilient
+  Differential Privacy*.
+
+[(preprint available here)](https://arxiv.org/pdf/2209.12528.pdf).
 
 ## 1. Overview
 
@@ -299,11 +301,11 @@ Please consider citing our paper if
 you use the code or data in your research project.
 
 ```bibtex
-@inproceedings{hyades-arxiv22,
+@inproceedings{efficient2024jiang,
   author={Jiang, Zhifeng and Wang, Wei and Ruichuan, Chen},
-  title={Taming Client Dropout for Distributed Differential Privacy in Federated Learning},
-  year={2022},
-  booktitle={arXiv:2209.12528},
+  title={Efficient Federated Learning with Dropout-Resilient Differential Privacy},
+  year={2024},
+  booktitle={EuroSys},
 }
 ```
 
