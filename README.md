@@ -1,4 +1,4 @@
-# Hyades
+# Dordis
 
 This repository contains the evaluation artifacts of our EuroSys'24 paper *Efficient Federated Learning with Dropout-Resilient
   Differential Privacy*.
