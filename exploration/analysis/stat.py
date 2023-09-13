@@ -5,9 +5,9 @@ from text_related import text_summary
 from plot_related import time_sequence_plot
 sys.path.append('../..')
 from functools import reduce
-from hyades.config import Config
-from hyades.apps.iterative.payload import Payload as iterative
-from hyades.apps.federated_learning.payload import Payload as fl
+from dordis.config import Config
+from dordis.apps.iterative.payload import Payload as iterative
+from dordis.apps.federated_learning.payload import Payload as fl
 
 config_rel = "config.yml"
 
@@ -21,7 +21,7 @@ def get_chunk_meta(task_folder):
         payload_model = iterative()
     else:
         # cannot be placed at the front due to import issues
-        from hyades.apps.federated_learning.trainers \
+        from dordis.apps.federated_learning.trainers \
             import registry as trainers_registry
 
         trainer = trainers_registry.get()
@@ -31,7 +31,7 @@ def get_chunk_meta(task_folder):
 
     # for setting DP parameters: TODO: to optmize, I think there is no need
     # to calculate DP parameters (it takes too long)
-    from hyades.protocols import registry as protocol_registry
+    from dordis.protocols import registry as protocol_registry
     protocol = protocol_registry.get()
     chunk_size = protocol.calc_chunk_size(data_dim, calc_dp_params=False)
     actual_dim = reduce(lambda x, y: x + y,
@@ -50,11 +50,11 @@ def get_phase_info(task_folder):
 
         if agg_type in ["plaintext", "secagg", "dp", "dp_plus_secagg"]:
             if agg_type in ["plaintext", "dp"]:
-                from hyades.protocols.const import PlaintextConst
+                from dordis.protocols.const import PlaintextConst
                 c = PlaintextConst()
 
             else:  # secagg or dp_plus_secagg
-                from hyades.protocols.const import SecAggConst
+                from dordis.protocols.const import SecAggConst
                 c = SecAggConst()
 
             res = {}

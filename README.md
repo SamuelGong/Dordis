@@ -59,7 +59,7 @@ bash setup.sh install
 **Remark**
 
 1. All the dependencies will be installed to a newly added environment 
-called `hyades` and thus will not mess with the original system.
+called `dordis` and thus will not mess with the original system.
 
 ### 3.2 Run Experiments
 
@@ -76,7 +76,7 @@ Then the mainly logged information will be output to the following file, where
 `[some timestamp]` will be prompted as soon as you enter the above command:
 
 ```
-exploration/ae-simulator/[target folder]/[some timestamp]/hyades-coordinator/log.txt
+exploration/ae-simulator/[target folder]/[some timestamp]/dordis-coordinator/log.txt
 ```
 
 **Remarks**
@@ -287,7 +287,7 @@ where `[...]` for job killing is also available at the log.
 
 ```
 Repo Root
-|---- hyades                           # Core implementation
+|---- dordis                           # Core implementation
 |---- exploration                      # Evaluation
     |---- cluster_folder_template      # Basic tools for cluster deployment
     |---- simulation_folder_template   # Basic tools for single-node simulation

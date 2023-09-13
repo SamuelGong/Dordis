@@ -1,11 +1,11 @@
 # The cluster plan
 server:
-  name: hyades-coordinator
+  name: dordis-coordinator
   type: r5.4xlarge
   region: us-east-2
 client_template:
   type_list:
-    - name_prefix: hyades-worker-
+    - name_prefix: dordis-worker-
       count: 100
       type: c5.xlarge
       region: us-east-2

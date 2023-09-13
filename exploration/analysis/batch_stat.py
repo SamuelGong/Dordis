@@ -12,7 +12,7 @@ from table_related import table_dim_3
 from plot_related import complex_plot, bar_plot, stacked_bar_plot
 from backend import find_substr
 
-from hyades.primitives.differential_privacy\
+from dordis.primitives.differential_privacy\
     .utils.accounting_utils import dskellam_params, \
     skellam_rdp, get_privacy_spent
 
@@ -27,7 +27,7 @@ CLIENTS = "num_clients"
 analysis_table_rel = "basic_tab.txt"
 analysis_table_sa_rel = "basic_tab_sa.txt"
 profile_table_rel = "profile_tab.txt"
-coordinator_folder_rel = "hyades-coordinator"
+coordinator_folder_rel = "dordis-coordinator"
 log_rel = "log.txt"
 RDP_ORDERS = tuple(range(2, 129)) + (256,)
 

@@ -8,7 +8,7 @@ import copy
 
 from utils import get_chunks_idx, get_chunks_idx_with_mod
 
-project_name = "Hyades"
+project_name = "dordis"
 exploration_dir_rel = "exploration"
 dev_dir_rel = "dev"
 conda_env_name = project_name.lower()
@@ -426,7 +426,7 @@ def simulation(command, args):
         raise ValueError(f"Command {command} is not supported.")
 
     if command in ["local_standalone", "local_clean_memory"]:
-        names = ["hyades-coordinator"]
+        names = ["dordis-coordinator"]
     else:
         task_folder_short = '/'.join(task_folder.split('/')[-2:])
         with open(config_path, 'r') as fin:
@@ -438,8 +438,8 @@ def simulation(command, args):
             num_physical_clients = config['clients']['num_physical_clients']
         else:
             num_physical_clients = config['clients']['total_clients']
-        names = [f"hyades-worker-{client_idx}" for client_idx
-                 in range(1, num_physical_clients + 1)] + ["hyades-coordinator"]
+        names = [f"dordis-worker-{client_idx}" for client_idx
+                 in range(1, num_physical_clients + 1)] + ["dordis-coordinator"]
 
         if command in ["local_start"]:
             client_ports = config["server"]['port']

@@ -11,7 +11,7 @@ WORKING_DIR=$(pwd)
 # need to change according to the relative location of this script
 PROJECT_DIR=${WORKING_DIR}/../..
 echo $PROJECT_DIR
-CONDA_ENV_NAME='hyades'
+CONDA_ENV_NAME='dordis'
 
 # install anaconda if necessary
 CONDA_DIR=${HOME}/anaconda3
@@ -52,5 +52,5 @@ if ! which redis-server > /dev/null 2>&1; then
 fi
 
 # used by dev/utils
-pip install -q paramiko  # should be outside the env hyades
+pip install -q paramiko  # should be outside the env dordis
 cd ${ORIGINAL_DIR}

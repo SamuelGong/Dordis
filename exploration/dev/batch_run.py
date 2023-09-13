@@ -7,7 +7,7 @@ from utils import execute_remotely, \
     execute_locally, calc_sleep_time
 import torch
 
-project_name = "hyades"
+project_name = "dordis"
 setup_handler_rel = "setup.sh"
 cluster_run_handler_rel = "cluster_run.sh"
 simulator_run_handler_rel = "simulator_run.sh"
