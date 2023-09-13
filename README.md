@@ -301,7 +301,7 @@ Please consider citing our paper if
 you use the code or data in your research project.
 
 ```bibtex
-@inproceedings{efficient2024jiang,
+@inproceedings{jiang2024efficient,
   author={Jiang, Zhifeng and Wang, Wei and Ruichuan, Chen},
   title={Efficient Federated Learning with Dropout-Resilient Differential Privacy},
   year={2024},
