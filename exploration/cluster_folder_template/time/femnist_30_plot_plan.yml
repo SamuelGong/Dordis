@@ -1,0 +1,62 @@
+enable:
+  - group: Orig
+    member:
+      - label: plain
+        folder: ../no-pipeline-experiments
+        exp_name: dps_opt_femnist_no_no_30_e6_r3_c20_n3550_upper100in3550
+      - label: pipe
+        folder: ../pipeline-experiments
+        exp_name: dps_opt_femnist_no_pipe2_30_e6_r3_c20_n3550_upper100in3550
+  - group: XNoise
+    member:
+      - label: plain
+        folder: ../no-pipeline-experiments
+        exp_name: dps_xnoise_ideal_femnist_no_no_30_e6_r3_c20_n3550_upper100in3550
+      - label: pipe
+        folder: ../pipeline-experiments
+        exp_name: dps_xnoise_ideal_femnist_no_pipe2_30_e6_r3_c20_n3550_upper100in3550
+  - group: Orig+
+    member:
+      - label: plain
+        folder: ../no-pipeline-experiments
+        exp_name: dps_opt_femnist_plus_no_no_30_e6_r3_c20_n3550_upper100in3550
+      - label: pipe
+        folder: ../pipeline-experiments
+        exp_name: dps_opt_femnist_plus_no_pipe2_30_e6_r3_c20_n3550_upper100in3550
+  - group: XNoise+
+    member:
+      - label: plain
+        folder: ../no-pipeline-experiments
+        exp_name: dps_xnoise_ideal_femnist_plus_no_no_30_e6_r3_c20_n3550_upper100in3550
+      - label: pipe
+        folder: ../pipeline-experiments
+        exp_name: dps_xnoise_ideal_femnist_plus_no_pipe2_30_e6_r3_c20_n3550_upper100in3550
+plots:
+  - name: effiency-30-femnist-combined
+    type: time-stacked-bar
+    xlabel: Aggregation Protocol
+    ylabel: Time
+    params:
+      figsize:
+        - 3.0
+        - 0.8
+      bar_width: 0.35
+      fontsize: 9
+      legend:
+        loc: center
+        bbox_to_anchor:
+          - 0.5
+          - 0.5
+        ncol: 4
+      customized:
+        legend_separate: true
+#        xticks: label
+        yaxis_time: true
+        color_scheme: true
+        line_pattern: true
+        text_hoffset_factor: 0.8
+        percentage_first_element:
+          text_fontsize: 7
+          round_para: 0
+          text_hoffset_factor_2: 0.6
+#        dot_pattern: true

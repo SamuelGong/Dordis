@@ -1,0 +1,1 @@
+batch_run.sh: line 17: /Users/samuel/.ssh/MyKeyPair.pem: Permission denied

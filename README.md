@@ -289,9 +289,9 @@ where `[...]` for job killing is also available at the log.
 
 ### 5.1 Major Claims
 
-* Our noise enforcement scheme, *XNoise*, guarantees the consistent achievement of the desired privacy level, even in the presence of client dropout, while maintaining the model utility. This claim is supported by the simulation experiment (E1) outlined in Section 6.2 of the paper, with the corresponding results presented in Figure 8, Table 2, and Figure 9.
-* The *XNoise* scheme introduces acceptable runtime overhead, with the network overhead being scalable with respect to the model's expanding size. This can be proven by the cluster experiment (E2) described in Section 6.3 of the paper, whose results are reported in Figure 10 and Table 3.
-* The pipeline-parallel aggregation design employed by Dordis significantly boosts training speed, leading to a remarkable improvement of up to 2.4X in the training round time. This finding is supported by the cluster experiment (E3) discussed in Section 6.4, and the corresponding results are depicted in Figure 10.
+* Our noise enforcement scheme, *XNoise*, guarantees the consistent achievement of the desired privacy level, even in the presence of client dropout, while maintaining the model utility. This claim is supported by the simulation experiment (**E1**) outlined in Section 6.2 of the paper, with the corresponding results presented in Figure 8, Table 2, and Figure 9.
+* The *XNoise* scheme introduces acceptable runtime overhead, with the network overhead being scalable with respect to the model's expanding size. This can be proven by the cluster experiment (**E2**) described in Section 6.3 of the paper, whose results are reported in Figure 10 and Table 3.
+* The pipeline-parallel aggregation design employed by Dordis significantly boosts training speed, leading to a remarkable improvement of up to 2.4X in the training round time. This finding is supported by the cluster experiment (**E3**) discussed in Section 6.4, and the corresponding results are depicted in Figure 10.
 
 ### 5.2 Experiments
 
@@ -327,6 +327,63 @@ where `[...]` for job killing is also available at the log.
 * **Expected Results**
   - After Step 1, you are expected to replicate the **exact** images as the ones illustrated in Figure 8. 
   - After Step 3, you should be able to replicate **similar** results as the ones presented by Table 2 and Figure 9.
+
+#### E2 [*Efficiency of Noise Enforcement*]
+
+* **Preparation** Please make sure that you have followed the instructions in Section [Cluster Deployment](#4-cluster-deployment) and enter the folder `exploration/ae-cluster`.
+* **Execution**
+  - Step 1: Start the allocated AWS EC2 cluster and set the bandwidth limit using the following commands, which takes **two to three minutes** to finish:
+
+  ```bash
+  bash manage_cluster.sh start
+  # after the above command returns and wait for approximately one more minute
+  bash manage_cluster.sh limit_bandwidth
+  ```
+
+  - Step 2: Reproducing the related part of Figure 10 needs to run the following commands, which may takes **four to five** days to complete. Similar to simulation, a line `Batch jobs ended.` will be appended to the log file `batch_log.txt` when all the jobs finished. It is also noteworthy that the cluster will be automatically stopped after the completion of all jobs, and thus there is no need for waiting at the table.
+  
+  ```bash
+  # for part of Figure 10
+  bash batch_run.sh batch_plan.txt
+  ```
+
+  - Step 3: Reproducing Table 3 only needs calculation using the following commands within **one second**:
+  
+  ```bash
+  # for Table 3
+  python network/main.py
+  ```
+
+* **Expected Results**
+  - After Step 3, you are expected to see the **exact** data of Table 3 in the command line.
+  - The processing of the collected data for Figure 10 is deferred to the next experiment (**E3**).
+
+#### E3 [*Efficiency of Pipeline Acceleration*]
+* **Preparation** Similar to **E2**, Please make sure that you have followed the instructions in Section [Cluster Deployment](#4-cluster-deployment) and enter the folder `exploration/ae-cluster`.
+* **Execution**
+  - Step 1: Again, start and configure the AWS EC2 cluster with the following commands in **two to three** minutes
+
+  ```bash
+  bash manage_cluster.sh start
+  # after the above command returns and wait for approximately one more minute
+  bash manage_cluster.sh limit_bandwidth
+  ```
+
+  - Step 2: Reproducing the remaining part of Figure 10 needs to run the following commands, which may takes **three to four** days to complete. Similarly, a successful completion of jobs will be indicated by the final line `Batch jobs ended.` appended to the log file `batch_log.txt`. The cluster will also be then shut down automatically.
+  
+  ```bash
+  # for the other part of Figure 10
+  bash batch_run.sh batch_plan_2.txt
+  ```
+
+  - Step 3: Processing the collected data using the following commands, which only takes **several minutes**.
+  ```bash
+  cd performance
+  bash batch_plot.sh
+  ```
+  
+* **Expected Results**
+  - After Step 2, you are expected to generated images **similar** to the ones presented in Figure 10.
 
 ## 6. Repo Structure
 

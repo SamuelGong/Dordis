@@ -1,0 +1,122 @@
+clients:
+    type: base
+    total_clients: 3550
+    num_physical_clients: 100
+    resource_saving: true
+    sample:
+        type: uniform
+        mode: sampling_rate_upperbounded
+        sampling_rate_upperbound: 0.02816901409
+        seed: 1
+    delay_mock:
+        type: proportional
+        args:
+            - zipf
+            - 1.2
+            - 0
+            - 2
+            - true  # shuffle or not after sorting
+        seed: 1
+
+server:
+    type: base
+    address: 127.0.0.1
+    port:
+        - 8000
+        - 8001
+        - 8002
+        - 8003
+        - 8004
+        - 8005
+        - 8006
+        - 8007
+        - 8008
+        - 8009
+        - 8010
+        - 8011
+        - 8012
+        - 8013
+        - 8014
+        - 8015
+    disable_clients: true
+    ping_interval: 1
+    ping_timeout: 86400
+    redis:
+        port: 6379
+
+scheduler:
+    type: base
+
+agg:
+    type: dp_plus_secagg
+    threshold: 0.5
+    differential_privacy:
+        mechanism: dskellam
+        params:
+            num_bits: 16  # Number of bits for quantization.
+            log_beta: -0.5  # Beta for stochastic rounding.
+            l2_clip_norm: 1  # Initial L2 norm clip
+#            delta: 10  # Delta for the DP mechanism.
+#            epsilon: 600000000  # Epsilon for the DP mechanism.
+            delta: 0.00028  # Delta for the DP mechanism.
+            epsilon: 6  # Epsilon for the DP mechanism.
+            k_stddevs: 3  # Number of stddevs to bound the signal range.
+            init_sample_hadamard_seed: 1
+            num_rounds: 50
+        dropout_resilience:
+            type: simple
+            dropout_tolerated_frac: 0.5
+    security:
+        bit_width: 16
+        key_agreement:
+            type: elliptic_curve
+        secret_sharing:
+            type: myshamir
+            threshold: 0.5
+        authenticated_encryption:
+            type: fernet
+        pseudorandom_generator:
+            type: os_random
+    quantize:
+        type: asymmetric
+        clipping_range:
+            - -3.0
+            - 3.0
+        bit_width: 16
+        batch:
+            type: best
+            total_bit_width: 64
+    pipeline:
+        type: even
+        num_chunks: 2
+
+app:
+    type: federated_learning
+    init_scale_threshold: 1.0
+    repeat: 3
+    debug:
+        client:
+            sketch_num: 3
+        server:
+            sketch_num: 3
+            test: true
+    data:
+        random_seed: 1
+        datasource: FEMNIST
+        sampler: all_inclusive
+        num_classes: 62
+        concurrent_download: True
+    trainer:
+        epochs: 1
+        batch_size: 20
+        type: basic
+        model_name: cnn_ddgauss
+        num_classes: 62
+        optimizer: SGD
+        learning_rate: 0.01
+        momentum: 0.9
+        weight_decay: 0.0
+
+results:
+    results_dir: ./
+    types: round_time

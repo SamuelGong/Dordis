@@ -1,0 +1,62 @@
+enable:
+  - group: Orig
+    member:
+      - label: plain
+        folder: ../no-pipeline-experiments
+        exp_name: dps_opt_cifar10_no_no_10_big_e6_r3_c3_n100_upper16in100
+      - label: pipe
+        folder: ../pipeline-experiments
+        exp_name: dps_opt_cifar10_no_pipe5_10_big_e6_r3_c3_n100_upper16in100
+  - group: XNoise
+    member:
+      - label: plain
+        folder: ../no-pipeline-experiments
+        exp_name: dps_xnoise_ideal_cifar10_no_no_10_big_e6_r3_c3_n100_upper16in100
+      - label: pipe
+        folder: ../pipeline-experiments
+        exp_name: dps_xnoise_ideal_cifar10_no_pipe10_10_big_e6_r3_c3_n100_upper16in100
+  - group: Orig+
+    member:
+      - label: plain
+        folder: ../no-pipeline-experiments
+        exp_name: dps_opt_cifar10_plus_no_no_10_big_e6_r3_c3_n100_upper16in100
+      - label: pipe
+        folder: ../pipeline-experiments
+        exp_name: dps_opt_cifar10_plus_no_pipe10_10_big_e6_r3_c3_n100_upper16in100
+  - group: XNoise+
+    member:
+      - label: plain
+        folder: ../no-pipeline-experiments
+        exp_name: dps_xnoise_ideal_cifar10_plus_no_no_10_big_e6_r3_c3_n100_upper16in100
+      - label: pipe
+        folder: ../pipeline-experiments
+        exp_name: dps_xnoise_ideal_cifar10_plus_no_pipe5_10_big_e6_r3_c3_n100_upper16in100
+plots:
+  - name: effiency-10-cifar10-vgg19-combined
+    type: time-stacked-bar
+    xlabel: Aggregation Protocol
+    ylabel: Time
+    params:
+      figsize:
+        - 3.0
+        - 0.8
+      bar_width: 0.35
+      fontsize: 9
+      legend:
+        loc: center
+        bbox_to_anchor:
+          - 0.5
+          - 0.5
+        ncol: 4
+      customized:
+        legend_separate: true
+#        xticks: label
+        yaxis_time: true
+        color_scheme: true
+        line_pattern: true
+        text_hoffset_factor: 0.8
+        percentage_first_element:
+          text_fontsize: 7
+          round_para: 0
+          text_hoffset_factor_2: 0.6
+#        dot_pattern: true
