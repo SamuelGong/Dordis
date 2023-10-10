@@ -1,0 +1,67 @@
+source:
+  - group: 0
+    member:
+      - value: Orig
+        folder: ../experiments
+        exp_name: dps_opt_cifar10_no_no_0_e6_r150_c3_n100_select16
+      - value: XNoise
+        folder: ../experiments
+        exp_name: dps_xnoise_ideal_cifar10_no_no_0_e6_r150_c3_n100_select16
+  - group: 10
+    member:
+      - value: Orig
+        folder: ../experiments
+        exp_name: dps_opt_cifar10_no_no_10_e6_r150_c3_n100_select16
+      - value: XNoise
+        folder: ../experiments
+        exp_name: dps_xnoise_ideal_cifar10_no_no_10_e6_r150_c3_n100_select16
+  - group: 20
+    member:
+      - value: Orig
+        folder: ../experiments
+        exp_name: dps_opt_cifar10_no_no_20_e6_r150_c3_n100_select16
+      - value: XNoise
+        folder: ../experiments
+        exp_name: dps_xnoise_ideal_cifar10_no_no_20_e6_r150_c3_n100_select16
+  - group: 30
+    member:
+      - value: Orig
+        folder: ../experiments
+        exp_name: dps_opt_cifar10_no_no_30_e6_r150_c3_n100_select16
+      - value: XNoise
+        folder: ../experiments
+        exp_name: dps_xnoise_ideal_cifar10_no_no_30_e6_r150_c3_n100_select16
+  - group: 40
+    member:
+      - value: Orig
+        folder: ../experiments
+        exp_name: dps_opt_cifar10_no_no_40_e6_r150_c3_n100_select16
+      - value: XNoise
+        folder: ../experiments
+        exp_name: dps_xnoise_ideal_cifar10_no_no_40_e6_r150_c3_n100_select16
+raw_data: cifar10-utility-raw.pkl
+plots:
+  - type: dropout-acc  # Alternative: dropout-acc-line
+    xlabel: Per-round Dropout Rate (%)
+    ylabel: Testing Acc. (%)
+    path: cifar10-final-acc
+    params:
+      figsize:
+        - 4.0  # Change to 2.0 when it is dropout-acc-line
+        - 0.7
+      fontsize: 9
+      legend:
+        loc: center
+        bbox_to_anchor:
+          - 0.5
+          - 0.5
+        ncol: 3
+      bar_width: 0.3  # Comment it when it is dropout-acc-line
+      customized:
+        text_fontsize: 6
+        legend_separate: True
+        color_scheme: True
+        line_pattern: True
+        dot_pattern: True
+        group_bar_gap: 0.05
+        text_hoffset_factor: 0.5

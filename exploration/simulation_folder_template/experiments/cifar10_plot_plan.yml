@@ -1,0 +1,54 @@
+enable:
+  - group: Orig
+    member:
+      - label: 1
+        folder: .
+        exp_name: dps_opt_cifar10_no_no_20_e6_r150_c3_n100_select16
+  - group: XNoise-Prec
+    member:
+      - label: 1
+        folder: .
+        exp_name: dps_xnoise_ideal_cifar10_no_no_20_e6_r150_c3_n100_select16
+plots:
+  - name: cifar10-20-round-acc
+    type: round-acc
+    xlabel: Round
+    ylabel: Accuracy
+    params:
+      xlim:
+        - 20
+        - 150
+      yticks:
+        - 30
+        - 50
+        - 70
+      legend:
+        frameon: false
+        ncol: 3
+#        loc: best
+        bbox_to_anchor:
+          - 1.0
+          - 2.2
+      customized:
+        color_scheme: true
+        line_pattern: true
+#        num_xticks: 3
+        legend_separate: true
+      fontsize: 10
+      ylim:
+        - 25
+        - 75
+      xticks:
+        - 50
+        - 100
+        - 150
+      figsize:
+        - 1.0
+        - 1.1
+#      legend:
+#        frameon: false
+#        ncol: 1
+#        bbox_to_anchor:
+#          - 1.0
+#          - 1.4
+#        fontsize: 9

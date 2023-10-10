@@ -1,0 +1,57 @@
+enable:
+  - group: Orig
+    member:
+      - label: 1
+        folder: .
+        exp_name: dps_opt_reddit_no_no_20_e6_r50_c5_n200_select20
+  - group: XNoise
+    member:
+      - label: 1
+        folder: .
+        exp_name: dps_xnoise_ideal_reddit_no_no_20_e6_r50_c5_n200_select20
+plots:
+  - name: reddit-20-round-acc
+    type: round-acc
+    xlabel: Round
+    ylabel: Perplexity
+    params:
+      xlim:
+        - 0
+        - 50
+      xticks:
+        - 15
+        - 30
+        - 45
+#      ylim:
+#        - 15
+#        - 65
+#      yticks:
+#        - 20
+#        - 40
+#        - 60
+      legend:
+        frameon: false
+        ncol: 3
+#        loc: best
+        bbox_to_anchor:
+          - 1.0
+          - 2.2
+      customized:
+        color_scheme: true
+        line_pattern: true
+#        num_xticks: 4
+        legend_separate: true
+      fontsize: 10
+#      ylim:
+#        - 0
+#        - 100
+      figsize:
+        - 1.0
+        - 1.1
+#      legend:
+#        frameon: false
+#        ncol: 1
+#        bbox_to_anchor:
+#          - 1.0
+#          - 1.4
+#        fontsize: 9

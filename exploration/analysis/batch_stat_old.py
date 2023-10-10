@@ -129,16 +129,6 @@ def extract_time_info(task_folder, part='all'):
         'std': result_dict[TIME_METRICS][part]['std']
     }
 
-def extract_network_info(task_folder, part='all'):
-    stat_path = os.path.join(task_folder, stat_json_rel)
-    with open(stat_path, 'r') as fin:
-        result_dict = json.load(fin)
-
-    return {
-        'value': result_dict[NETWORK_METRICS][part]['mean'],
-        'std': result_dict[NETWORK_METRICS][part]['std']
-    }
-
 
 def extract_dropout_info(task_folder):
     log_path = os.path.join(
@@ -452,19 +442,7 @@ def extract_exp_data(method_name, folder_path, plot_types, verbose=True):
                 'agg' : agg_time,
                 'other': overall_time - agg_time
             }
-        elif plot_type == "time-bar":
-            overall_time = extract_time_info(folder_path)["value"]
-            result[plot_type] = {
-                'agg' : agg_time,
-                'other': overall_time - agg_time
-            }
-        elif plot_type == "network-stacked-bar":
-            send_traffic = extract_network_info(folder_path, part='send')["value"]
-            recv_traffic = extract_network_info(folder_path, part='recv')["value"]
-            result[plot_type] = {
-                'send': send_traffic,
-                'recv': recv_traffic
-            }
+
         elif "round-acc" in plot_types:
             app_metric = extract_app_metric(folder_path, metric=TESTING_ACCURACY)
             if method_name == "Early":
@@ -542,7 +520,7 @@ def batch_plot(parent_folder, plot_plan_path):
         xlabel = plot_dict["xlabel"] if "xlabel" in plot_dict else None
         ylabel = plot_dict["ylabel"] if "ylabel" in plot_dict else None
 
-        if plot_type in ["time-stacked-bar", "network-stacked-bar"]:
+        if plot_type == "time-stacked-bar":
             data_to_plot = {}
             for outer_key, outer_value in raw_data.items():
                 if outer_key not in data_to_plot:
@@ -561,10 +539,7 @@ def batch_plot(parent_folder, plot_plan_path):
             )
         elif plot_type == "round-acc":
             data_to_plot = []
-            if "perplexity" not in ylabel.lower():
-                ylabel += " (%)"
-            else:
-                ylabel += " (1e4)"
+            ylabel += " (%)"
 
             for group_name, group_data in raw_data.items():
                 # there should be only 1 key
@@ -573,10 +548,7 @@ def batch_plot(parent_folder, plot_plan_path):
                 label_data = group_data[first_key][plot_type]
 
                 x = np.array([int(e) for e in label_data['x']]) + 1
-                if "perplexity" not in ylabel.lower():
-                    y = np.array(label_data['y']) * 100  # to percent
-                else:
-                    y = np.array(label_data['y']) / 10000
+                y = np.array(label_data['y']) * 100  # to percent
 
                 data_to_plot.append({
                     'label': label,
@@ -598,12 +570,7 @@ def batch_plot(parent_folder, plot_plan_path):
 
         elif plot_type == "time-acc":
             data_to_plot = []
-            if "perplexity" not in ylabel.lower():
-                ylabel += " (%)"
-                reverse_when_preprocess_acc = False
-            else:
-                ylabel += " (1e4)"
-                reverse_when_preprocess_acc = True
+            ylabel += " (%)"
 
             max_second = -1
             for group_name, group_data in raw_data.items():
@@ -615,10 +582,7 @@ def batch_plot(parent_folder, plot_plan_path):
                 x = np.array(label_data['x'])
                 if max_second < max(x):
                     max_second = max(x)
-                if "perplexity" not in ylabel.lower():
-                    y = np.array(label_data['y']) * 100  # to percent
-                else:
-                    y = np.array(label_data['y']) / 10000
+                y = np.array(label_data['y']) * 100  # to percent
 
                 data_to_plot.append({
                     'label': label,
@@ -645,8 +609,7 @@ def batch_plot(parent_folder, plot_plan_path):
                     parent_folder, plot_dict["name"]),
                 params=plot_dict["params"],
                 both_type=True,
-                preprocess_acc=True,
-                reverse_when_preprocess_acc=reverse_when_preprocess_acc,
+                preprocess_acc=True
             )
 
     # if "enable-2" not in plan:

@@ -1,0 +1,113 @@
+clients:
+    type: base
+    total_clients: 100
+    num_physical_clients: 16
+    resource_saving: true
+    worst_online_frac: 1.0  # placeholder for using fixed_sample_size, no real use
+    sample:
+        type: uniform
+        mode: fixed_sample_size
+        sample_size: 16
+        seed: 1
+    dropout:
+        type: fixed_frac
+        args:
+            - 0.3
+        seed: 1
+
+server:
+    type: base
+    address: 127.0.0.1
+    port:
+        - 8000
+        - 8001
+        - 8002
+        - 8003
+        - 8004
+        - 8005
+        - 8006
+        - 8007
+        - 8008
+        - 8009
+        - 8010
+        - 8011
+        - 8012
+        - 8013
+        - 8014
+        - 8015
+    disable_clients: true
+    ping_interval: 1
+    ping_timeout: 86400
+    redis:
+        port: 6379
+
+scheduler:
+    type: base
+
+agg:
+    type: dp_plus_secagg
+    threshold: 0.5
+    differential_privacy:
+        mechanism: dskellam
+        params:
+            num_bits: 20  # Number of bits for quantization.
+            log_beta: -0.5  # Beta for stochastic rounding.
+            l2_clip_norm: 3  # Initial L2 norm clip
+#            delta: 10  # Delta for the DP mechanism.
+#            epsilon: 600000000  # Epsilon for the DP mechanism.
+            delta: 0.01  # Delta for the DP mechanism.
+            epsilon: 6  # Epsilon for the DP mechanism.
+            k_stddevs: 3  # Number of stddevs to bound the signal range.
+            init_sample_hadamard_seed: 1
+            num_rounds: 150
+    security:
+        bit_width: 20
+        key_agreement:
+            type: elliptic_curve
+        secret_sharing:
+            type: shamir
+            threshold: 0.5
+        authenticated_encryption:
+            type: fernet
+        pseudorandom_generator:
+            type: os_random
+    quantize:
+        type: asymmetric
+        clipping_range:
+            - -3.0
+            - 3.0
+        bit_width: 20
+        batch:
+            type: best
+            total_bit_width: 60
+
+app:
+    type: federated_learning
+    init_scale_threshold: 1.0
+    repeat: 150
+    debug:
+        client:
+            sketch_num: 3
+        server:
+            sketch_num: 3
+            test: true
+    data:
+        random_seed: 1
+        datasource: CIFAR10
+        sampler: noniid
+        concurrent_download: True
+        partition_size: 1000
+    trainer:
+        epochs: 1
+        batch_size: 128
+        type: basic
+        model_name: resnet_18
+        num_classes: 10
+        optimizer: SGD
+        learning_rate: 0.005
+        momentum: 0.9
+        weight_decay: 0.0001
+
+results:
+    results_dir: ./
+    types: round_time

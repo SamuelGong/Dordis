@@ -26,7 +26,9 @@ The rest of the README is organized as follows:
    * Learn how to run experiment in simulation mode.  
 4. [Cluster Deployment](#4-cluster-deployment)
    * Learn how to run experiments in a distributed manner.
-5. [Repo Structure](#5-repo-structure)
+5. [Reproducing Experimental Results](#5-reproducing-experimental-results)
+   * Learn how to reproduce paper experiments.
+6. [Repo Structure](#6-repo-structure)
    * What are contained in the project root folder.
 
 ## 2. Prerequisites
@@ -283,16 +285,59 @@ The `pid` is available at the beginning of the log.
 please kill it with `bash simulator_run.sh kill_a_task [...]`, as in the above subsection,
 where `[...]` for job killing is also available at the log.
 
-## 5. Repo Structure
+## 5. Reproducing Experimental Results
+
+### 5.1 Major Claims
+
+* Our noise enforcement scheme, *XNoise*, guarantees the consistent achievement of the desired privacy level, even in the presence of client dropout, while maintaining the model utility. This claim is supported by the simulation experiment (E1) outlined in Section 6.2 of the paper, with the corresponding results presented in Figure 8, Table 2, and Figure 9.
+* The *XNoise* scheme introduces acceptable runtime overhead, with the network overhead being scalable with respect to the model's expanding size. This can be proven by the cluster experiment (E2) described in Section 6.3 of the paper, whose results are reported in Figure 10 and Table 3.
+* The pipeline-parallel aggregation design employed by Dordis significantly boosts training speed, leading to a remarkable improvement of up to 2.4X in the training round time. This finding is supported by the cluster experiment (E3) discussed in Section 6.4, and the corresponding results are depicted in Figure 10.
+
+### 5.2 Experiments
+
+#### E1 [*Effectiveness of Noise Enforcement*]
+* **Preparation** Please make sure that you have followed the instructions in Section [Simulation](#3-simulation) and enter the folder `exploration/ae-simulator`.
+* **Execution**
+  - Step 1: Reproducing Figure 8 only requires to run the following commands, which only takes **several seconds** to finish:
+  
+   ```bash
+   # for Figure 8
+   cd privacy
+   bash run.sh
+   cd ..
+  ```
+  - Step 2: Reproducing Figure 9 and Table 2 requires to execute the following commands for batch processing, which may require an extensive amount of time to finish (e.g., when we used a node (Intel Xeon 16 Cores 32 Threads E5-2683V4 2.1GHz) with 8 NVIDIA GeForce RTX 2080 Ti GPUs exclusively for this simulation, it took us **one to two months**). Should you have either faster CPUs or faster GPUs, the time cost should be reduced. As the jobs are launched and processed in the background, you should refer to the generated file `batch_log.txt` to see the up-to-date status of the batch processing.
+  
+   ```bash
+   bash batch_run.sh
+   ```
+
+  - Step 3: When the above step ends with success (i.e., the `batch_log.txt` ends with a line `Batch job ended`), further run the following fast commands (**several seconds**) to visualize the collected data.
+
+   ```bash
+   # for Table 2
+   cd utility
+   bash run.sh
+   cd ..
+   # for Figure 9
+   cd experiments
+   bash batch_plot.sh
+   ```
+
+* **Expected Results**
+  - After Step 1, you are expected to replicate the **exact** images as the ones illustrated in Figure 8. 
+  - After Step 3, you should be able to replicate **similar** results as the ones presented by Table 2 and Figure 9.
+
+## 6. Repo Structure
 
 ```
 Repo Root
 |---- dordis                           # Core implementation
 |---- exploration                      # Evaluation
-    |---- cluster_folder_template      # Basic tools for cluster deployment
-    |---- simulation_folder_template   # Basic tools for single-node simulation
-    |---- dev                          # Shared experiment backend
-    |---- analysis                     # Shared data processing backend
+    |---- cluster_folder_template      # Necessities for cluster deployment
+    |---- simulation_folder_template   # Necessities for single-node simulation
+    |---- dev                          # Backend for experiment manager
+    |---- analysis                     # Backend for resulting data processing
 ```
 
 ## Notes
