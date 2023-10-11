@@ -1,5 +1,5 @@
 <p align="center">
-    <img src="asset/Dordis.png" height=130>
+    <img src="asset/dordis.png" height=130>
 </p>
 
 <p align="center">
