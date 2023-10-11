@@ -1,7 +1,5 @@
 #!/bin/bash
 
-pip install -q paramiko
-
 # make it suitable for your time zone
 sudo timedatectl set-timezone Asia/Hong_Kong
 
@@ -31,6 +29,8 @@ fi
 source ~/anaconda3/etc/profile.d/conda.sh
 
 cd ${PROJECT_DIR}
-pip install -r requirements.txt
+pip install -r requirements.txt --upgrade
 
+# used by dev/utils
+pip install -q paramiko
 cd ${ORIGINAL_DIR}
