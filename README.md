@@ -1,8 +1,24 @@
-# Dordis
+<p align="center">
+    <a href="https://arxiv.org/abs/2209.12528"><img src="https://img.shields.io/badge/arxiv-2209.12528-silver" alt="Paper"></a>
+    <a href=""><img src="https://img.shields.io/badge/Pub-EuroSys'24-olive" alt="Pub"></a>
+    <a href="https://github.com/SamuelGong/Dordis"><img src="https://img.shields.io/badge/-github-teal?logo=github" alt="github"></a>
+<!--     <a href="https://github.com/SamuelGong/Dordis/blob/main/LICENSE"><img src="https://img.shields.io/github/license/SamuelGong/Dordis?color=yellow" alt="License"></a> -->
+    <img src="https://badges.toozhao.com/badges/01HCERSP3HP3DQDCZGBGN0BFYX/green.svg" alt="Count"/>
+</p>
+
+<h1 align="center">Dordis: Efficient Federated Learning with Dropout-Resilient Differential Privacy (EuroSys 2024)</h1>
 
 This repository contains the evaluation artifacts of our paper titled 
-*Efficient Federated Learning with Dropout-Resilient Differential Privacy*, 
+*Dordis: Efficient Federated Learning with Dropout-Resilient Differential Privacy*, 
 which will be presented at EuroSys'24 conference.
+
+[Zhifeng Jiang](http://home.cse.ust.hk/~zjiangaj/), [Wei Wang](https://home.cse.ust.hk/~weiwa/), [Ruichuan Chen](https://www.ruichuan.org/)
+
+**Keywords**: Federated Learning, Distributed Differential Privacy, Client Dropout, Secure Aggregation, Pipeline
+
+**Abstract**: Federated learning (FL) is increasingly deployed among multiple clients to train a shared model over decentralized data. To address privacy concerns, FL systems need to safeguard the clients' data from disclosure during training and control data leakage through trained models when exposed to untrusted domains. Distributed differential privacy (DP) offers an appealing solution in this regard as it achieves a balanced tradeoff between privacy and utility without a trusted server. However, existing distributed DP mechanisms are impractical in the presence of *client dropout*, resulting in poor privacy guarantees or degraded training accuracy. In addition, these mechanisms suffer from severe efficiency issues.
+
+We present Dordis, a distributed differentially private FL framework that is highly efficient and resilient to client dropout. Specifically, we develop a novel `add-then-remove' scheme that enforces a required noise level precisely in each training round, even if some sampled clients drop out. This ensures that the privacy budget is utilized prudently, despite unpredictable client dynamics. To boost performance, Dordis operates as a distributed parallel architecture via encapsulating the communication and computation operations into stages. It automatically divides the global model aggregation into several chunk-aggregation tasks and pipelines them for optimal speedup. Large-scale deployment evaluations demonstrate that Dordis efficiently handles client dropout in various realistic FL scenarios, achieving the optimal privacy-utility tradeoff and accelerating training by up to 2.4× compared to existing solutions.
 
 You can find the preprint of the paper [here](https://arxiv.org/pdf/2209.12528.pdf).
 
