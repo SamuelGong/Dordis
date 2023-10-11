@@ -1,20 +1,23 @@
 # Dordis
 
-This repository contains the evaluation artifacts of our EuroSys'24 paper *Efficient Federated Learning with Dropout-Resilient
-  Differential Privacy*.
+This repository contains the evaluation artifacts of our paper titled 
+*Efficient Federated Learning with Dropout-Resilient Differential Privacy*, 
+which will be presented at EuroSys'24 conference.
 
-[(preprint available here)](https://arxiv.org/pdf/2209.12528.pdf).
+You can find the preprint of the paper [here](https://arxiv.org/pdf/2209.12528.pdf).
 
 ## 1. Overview
 
-The system supports two mode:
+The system supports two modes of operation:
 
-1. **Simulation**, where one can have his/her experiments running in a local machine/GPU server,
-This mode is usually for validating *functionality*, *privacy*, or *utility*.
-2. **Cluster Deployment**, where one can have his/her experiments running in an AWS EC2 cluster 
-(funded by his/her account). One can also choose to run atop an existing cluster of Ubuntu nodes
-(but this is not documented yet). 
-This mode is usually for evaluating *runtime performance*.
+1. **Simulation**:
+This mode allows you to run experiments on a local machine or GPU server.
+It is primarily used for validating functionality, privacy, or utility.
+2. **Cluster Deployment**:
+This mode enables you to run experiments on an AWS EC2 cluster 
+funded by your own account. Alternatively, you can also run experiments on 
+an existing cluster of Ubuntu nodes (currently undocumented). 
+Cluster Deployment Mode is typically used for evaluating runtime performance.
 
 The rest of the README is organized as follows:
 
@@ -26,118 +29,129 @@ The rest of the README is organized as follows:
    * Learn how to run experiment in simulation mode.  
 4. [Cluster Deployment](#4-cluster-deployment)
    * Learn how to run experiments in a distributed manner.
-5. [Reproducing Experimental Results](#5-reproducing-experimental-results)
+5. [Reproducing Experimental Results](#5-reproducing-experimental-results-full)
    * Learn how to reproduce paper experiments.
 6. [Repo Structure](#6-repo-structure)
    * What are contained in the project root folder.
 
 ## 2. Prerequisites
 
-One should be able to directly work in a **Python 3** Anaconda environment with some dependencies installed.
-For ease of use, we provide a shortcut for doing so:
+To work with the project, you need to have a Python 3 Anaconda environment set up 
+in your host machine (Ubuntu system assumed) with specific dependencies installed. 
+To simplify the setup process, we provide a shortcut:
 
 ```bash
-# starting from [project folder]
+# assumes you are working from the project folder
 cd exploration/dev
-bash controller_install.sh
-# please exit your current shell and log in again for conda to take effect
+bash standalone_install.sh
+conda activate dordis
 ```
+
+**Note**
+
+1. Most the dependencies will be installed in a newly created environment called 
+**dordis**, minimizing interference with your original system setup.
+2. However, please note that the `redis-server` application needs to be installed 
+at the **system** level with **sudo** previlige, as mentioned in the Line 49-52 of 
+the `standalone_install.sh` script. If you do not have sudo privileges, you can 
+follow the instructions provided [here](https://techmonger.github.io/40/redis-without-root/)
+to install Redis without root access. In that case, you should comment out these 
+lines before executing the command `bash standalone_install.sh`.
 
 ## 3. Simulation
 
-### 3.1 Install Dependencies
+### 3.1 Preparing Working Directory
 
-Think of a name for the working directory, e.g., `ae-simulator` 
-(this section uses this example name througout).
+Start by choosing a name for the working directory. 
+For example, let's use `ae-simulator` in the following instructions.
 
 ```bash
-# starting from [project folder]
+# assumes you are working from the project folder
 cd exploration
 cp -r simulation_folder_template ae-simulator
-cd ae-simulator
-bash setup.sh install
+cd exploration/ae-simulator
 ```
-
-**Remark**
-
-1. All the dependencies will be installed to a newly added environment 
-called `dordis` and thus will not mess with the original system.
 
 ### 3.2 Run Experiments
 
-Suppose that an experiment is configured by 
-`[target folder]/[target configuration file]` (relative path), 
-then one should be able to run the following commands to start the task in the background:
+To run an experiment with a specific configuration file in the background,
+follow these steps:
 
 ```bash
-# starting from [project folder]/exploration/ae-simulator
 bash simulator_run.sh start_a_task [target folder]/[target configuration file]
 ```
 
-Then the mainly logged information will be output to the following file, where 
-`[some timestamp]` will be prompted as soon as you enter the above command:
+The primarily logged information will be output to the following file:
 
 ```
-exploration/ae-simulator/[target folder]/[some timestamp]/dordis-coordinator/log.txt
+[target folder]/[timestamp]/dordis-coordinator/log.txt
 ```
 
-**Remarks**
+**Note**
 
-1. One can use `simulator_run.sh` for task-related control (no need to remember, 
-because the prompt will inform you of them whenever you start a task):
+1. When you execute the above command, the command line will prompt you with `[timestamp]`, 
+which represents the relevant timestamp and output folder.
+2. You can use the simulator_run.sh script for task-related control.
+You don't need to remember the commands because the prompt will inform you
+whenever you start a task. Here are a few examples:
     ```bash
-    # for killing the task halfway
-    bash simulator_run.sh kill_a_task [target folder]/[some timestamp]
-    # for analyzing the output to generate some insightful figures/tables
-    bash simulator_run.sh analyze_a_task [target folder]/[some timestamp]
+    # To kill a task halfway
+    bash simulator_run.sh kill_a_task [target folder]/[timestamp]
+    # To analyze the output and generate insightful figures/tables
+    bash simulator_run.sh analyze_a_task [target folder]/[timestamp]
     ```
    
-### 3.3 Batch Tasks to Run (Optional)
+### 3.3 Batch Tasks to Run
 
-The simulator supports batching tasks to run. After writing what tasks to run 
-in the background into `exploration/ae-simulator/batch_plan.txt` like:
-
-```
-some_folder_relative_path/configuration-a.yml
-some_folder_relative_path/configuration-b.yml
-some_folder_relative_path/configuration-c.yml
-```
-
-Then one can sequentially run the tasks in a batch via
+The simulator also supports batching tasks to run. You can specify the tasks 
+to run in the background by writing them in the `batch_plan.txt` file, 
+as shown below:
 
 ```
-# Starting at exploration/ae-simulator/
-bash batch_run.sh
+[target folder]/[target configuration file]
+[target folder]/[target configuration file]
+[target folder]/[target configuration file]
 ```
 
-The execution log will be available at `exploration/ae-simulator/batch_log.txt`.
+To sequentially run the tasks in a batch, execute the following command:
 
-**Remark**
+```
+bash batch_run.sh batch_plan.txt
+```
 
-1. Simply use `kill -9 [pid]` for killing the batching logic halfway (so that it does not issue any new task). 
-The `pid` is available at the beginning of the log.
-2. After that, for the currently running task that one wants to stop halfway,
-please kill it with `bash simulator_run.sh kill_a_task [...]`, as in the above subsection,
-where `[...]` for job killing is also available at the log.
+The execution log will be available at `batch_log.txt`.
+
+**Note**
+
+1. To stop the batching logic halfway and prevent it from issuing any new tasks,
+you can use the command `kill -9 [pid]`. The `[pid]` value can be found at the 
+beginning of the file `batch_log.txt`.
+2. If you want to stop a currently running task halfway, you can kill it using the
+command `bash simulator_run.sh kill_a_task [...]`, as explained in the previous
+subsection. The information needed to kill the job will also be available in the log.
 
 ## 4. Cluster Deployment
 
-One can start with his/her local machine (but it should have stable network connection), 
-or a remote node which is dedicated to coordination purpose 
-(thus it does not have to be a powerful machine).
+You can initiate the cluster deployment process either from your local host
+machine (ensuring a stable network connection) or from a dedicated remote node
+specifically designed for **coordination** purposes (we thus call it the coordinator node).
+It is important to note that the remote node does not necessarily need to be a
+powerful machine.
 
 ### 4.1 Install and Configure AWS CLI
 
-One should have an **AWS account**. Also, at the coordinator node, 
-one should have installed the latest **aws-cli** with credentials well configured (so that
-we can manipulate all the nodes in the cluster remotely via command line tools.).
+Before proceeding, please ensure that you have an **AWS account**.
+Additionally, on the coordinator node, it is essential to have the latest version of
+**aws-cli** installed and properly configured with the necessary credentials.
+This configuration will allow us to conveniently manage all the nodes in the cluster
+remotely using command-line tools.
 
 **Reference**
 
 1. [Install AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html).
     * Example command for installing into Linux x86 (64-bit):
     ```bash
-    # done anywhere, e.g., at your home directory
+    # You can work from any directory, e.g., at your home directory
     curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
     sudo apt install unzip
     unzip awscliv2.zip
@@ -146,18 +160,20 @@ we can manipulate all the nodes in the cluster remotely via command line tools.)
 2. [Configure AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-quickstart.html).
     * Example command for configuring one's AWS CLI:
     ```bash
-    # done anywhere, e.g., at your home directory
+    # You can work from any directory, e.g., at your home directory
     aws configure
     ```
-   where one sequentially input AWS Access Key ID, AWS Secret Access Key, Default region name and default output format.
+    You will be prompted to enter your AWS Access Key ID, AWS Secret Access Key,
+Default region name, and Default output format. Provide the required information as prompted.
 
-### 4.2 Launch a Cluster
+### 4.2 Configure and Allocate a Cluster
 
-Think of a name for the working directory, e.g., `ae-cluster` 
-(this section uses this example name througout; do NOT mess with the above simulator folder).
+To begin, let's choose a name for the working directory. For example, we can use `ae-cluster` 
+as the name throughout this section (please note that this name should not be confused with
+the above-mentioned simulator folder).
 
 ```bash
-# starting from [project folder]
+# assumes you are working from the project folder
 cd exploration
 cp -r cluster_folder_template ae-cluster
 cd ae-cluster
@@ -172,24 +188,25 @@ vim ../dev/ec2_node_template.yml
 # 2. cluster-related
 # relevant key:
 #     type and region for the server each client, and
-#     count and (just planning, not applied upon starting) bandwidth for each client
-# p.s. the provided images are specifically of Ubuntu 18.04
+#     count and bandwidth for each client
+#     (the provided images are specifically for Ubuntu 18.04)
 vim ec2_cluster_config.yml
-# edit the value for LOCAL_PRIVATE_KEY
-# the same as KeyName mentioned above
+# 3. minor
+# relevant value: LOCAL_PRIVATE_KEY
+#     set the value the same as KeyName mentioned above
 vim manage_cluster.sh
 ```
 
 Then one can launch a cluster from scratch:
 
 ```bash
-# starting from [project folder]/exploration/ae-cluster
 bash manage_cluster.sh launch
 ```
 
-**Remark**
+**Note**
 
-1. One can use `manage_cluster.sh` for a wide range of cluster-related control:
+1. The `manage_cluster.sh` script provides a range of cluster-related controls for
+your convenience. Here are some examples of how to use it:
 
     ```bash
     # start an already launch cluster
@@ -212,18 +229,18 @@ bash manage_cluster.sh launch
     bash manage_cluster.sh free_bandwidth
     ```
 
-### 4.3 Configure the Cluster
+### 4.3 Setting Up the Cluster
+
+Execute the following commands:
 
 ```bash
-# starting from [project folder]/exploration/ae-cluster
 bash setup.sh install
 bash setup.sh deploy_cluster
 ```
 
-**Remark** 
-1. Make sure that your `~/.ssh/` has the correct key file that you specified in `../dev/ec2_node_template.yml` 
-as well as `manage_cluster.sh`.
-2. One can use `setup.sh` for a wide-range of app-related control:
+**Note**
+1. Additionally, the `setup.sh` script offers a wide range of app-related controls.
+Here are a couple of examples:
     ```bash
     # update all running nodes' Github repo
     bash setup.sh update
@@ -239,151 +256,272 @@ Like what in simulation, once you have a running cluster, you can start a task
 with distributed deployment by running commands like:
 
 ```bash
-# starting from [project folder]/exploration/ae-simulator
 bash cluster_run.sh start_a_task [target folder]/[target configuration file]
 ```
 
 **Remark**
-1. One can use `cluster_run.sh` for task-related control (no need to remember, 
-because the prompt will inform you of them whenever you start a task):
+1. After you execute the above command, the command line will prompt you with `[timestamp]`, 
+which represents the relevant timestamp and output folder.
+2. To control the task, you can use the following commands with `cluster_run.sh`:
     ```bash
     # for killing the task halfway
-    bash cluster_run.sh kill_a_task [target folder]/[some timestamp]
+    bash cluster_run.sh kill_a_task [target folder]/[timestamp]
     # for fetching logs from all running nodes to the coordinator
     # (i.e., the machine where you type this command)
-    bash cluster_run.sh conclude_a_task [target folder]/[some timestamp]
+    bash cluster_run.sh conclude_a_task [target folder]/[timestamp]
     # for analyzing the collected log to generate some insightful figures/tables
     # Do it only after the command ... conclude_a_task ... has been executed successfully
-    bash cluster_run.sh analyze_a_task [target folder]/[some timestamp]
+    bash cluster_run.sh analyze_a_task [target folder]/[timestamp]
     ```
 
-### 4.5 Batch Tasks to Run (Optional)
+### 4.5 Batch Tasks to Run
 
-Similarly, the cluster mode also supports batching tasks to run. After writing what tasks to run 
-in the background into `exploration/ae-cluster/batch_plan.txt` like:
-
-```
-some_folder_relative_path/configuration-a.yml
-some_folder_relative_path/configuration-b.yml
-some_folder_relative_path/configuration-c.yml
-```
-
-Then one can sequentially run the tasks in a batch via
+In addition to running tasks individually, the cluster mode also supports batch 
+execution of tasks. To run a batch of tasks in the background, you need to specify
+the tasks to be executed in the `batch_plan.txt` file using the following format:
 
 ```
-# Starting at exploration/ae-cluster/
-bash batch_run.sh
+[target folder]/[target configuration file]
+[target folder]/[target configuration file]
+[target folder]/[target configuration file]
 ```
 
-The execution log will be available at `exploration/ae-cluster/batch_log.txt`.
+Then you can sequentially execute them as a batch by running the following command:
 
-**Remark**
+```
+bash batch_run.sh batch_plan.txt
+```
 
-1. Simply use `kill -9 [pid]` for killing the batching logic halfway (so that it does not issue any new task). 
-The `pid` is available at the beginning of the log.
-2. After that, for the currently running task that one wants to stop halfway,
-please kill it with `bash simulator_run.sh kill_a_task [...]`, as in the above subsection,
-where `[...]` for job killing is also available at the log.
+The execution log will be generated and can be found at `batch_log.txt`.
 
-## 5. Reproducing Experimental Results
+**Note**
+
+1. If you need to terminate the batch execution before completion, you can use the command
+`kill -9 [pid]` to stop the batching logic. The process ID `pid` can be found at the
+beginning of the log file.
+2. If you want to stop a specific task that is currently running, you can use the command
+`bash simulator_run.sh kill_a_task [...]` as explained in the subsection above. The
+necessary information for killing a job, denoted by `[...]`, can also be found in the log file.
+
+## 5. Reproducing Experimental Results (Full)
 
 ### 5.1 Major Claims
 
-* Our noise enforcement scheme, *XNoise*, guarantees the consistent achievement of the desired privacy level, even in the presence of client dropout, while maintaining the model utility. This claim is supported by the simulation experiment (**E1**) outlined in Section 6.2 of the paper, with the corresponding results presented in Figure 8, Table 2, and Figure 9.
-* The *XNoise* scheme introduces acceptable runtime overhead, with the network overhead being scalable with respect to the model's expanding size. This can be proven by the cluster experiment (**E2**) described in Section 6.3 of the paper, whose results are reported in Figure 10 and Table 3.
-* The pipeline-parallel aggregation design employed by Dordis significantly boosts training speed, leading to a remarkable improvement of up to 2.4X in the training round time. This finding is supported by the cluster experiment (**E3**) discussed in Section 6.4, and the corresponding results are depicted in Figure 10.
+* Our noise enforcement scheme, *XNoise*, guarantees the consistent achievement of
+the desired privacy level, even in the presence of client dropout, while maintaining
+the model utility. This claim is supported by the simulation experiment (**E1**)
+outlined in Section 6.2 of the paper, with the corresponding results presented in
+Figure 8, Table 2, and Figure 9.
+* The *XNoise* scheme introduces acceptable runtime overhead, with the network
+overhead being scalable with respect to the model's expanding size. This can be
+proven by the cluster experiment (**E2**) described in Section 6.3 of the paper,
+whose results are reported in Figure 10 and Table 3.
+* The pipeline-parallel aggregation design employed by Dordis significantly boosts
+training speed, leading to a remarkable improvement of up to 2.4X in the training
+round time. This finding is supported by the cluster experiment (**E3**) discussed
+in Section 6.4, and the corresponding results are depicted in Figure 10.
 
 ### 5.2 Experiments
 
+*Note: for certain conclusions that require extensive analysis, we have included
+instructions for both full experiments (**Full**) and minimal executable 
+examples (**Minimal**).*
+
 #### E1 [*Effectiveness of Noise Enforcement*]
-* **Preparation** Please make sure that you have followed the instructions in Section [Simulation](#3-simulation) and enter the folder `exploration/ae-simulator`.
-* **Execution**
-  - Step 1: Reproducing Figure 8 only requires to run the following commands, which only takes **several seconds** to finish:
+
+* **Preparation** Before proceeding with the simulation, please ensure that you have
+followed the instructions provided in Section [3.1](#31-preparing-working-directory)
+to prepare your working directory.
+
+* **Execution and Expected Results**
+  - Step 1: Reproducing Figure 8 can be accomplished by running the following commands.
+This step should only take **a few seconds** to complete. After this step, you should be
+able to replicate the exact images presented in Figure 8.
   
    ```bash
-   # for Figure 8
+   # starting from the exploration/ae-simulator directory
    cd privacy
    bash run.sh
-   cd ..
-  ```
-  - Step 2: Reproducing Figure 9 and Table 2 requires to execute the following commands for batch processing, which may require an extensive amount of time to finish (e.g., when we used a node (Intel Xeon 16 Cores 32 Threads E5-2683V4 2.1GHz) with 8 NVIDIA GeForce RTX 2080 Ti GPUs exclusively for this simulation, it took us **one to two months**). Should you have either faster CPUs or faster GPUs, the time cost should be reduced. As the jobs are launched and processed in the background, you should refer to the generated file `batch_log.txt` to see the up-to-date status of the batch processing.
+   # after which you should replicate exactly Figure 8
+   ```
+
+  - Step 2 **[Full]**: To reproduce Figure 9 and Table 2, execute the following commands for batch
+processing. Please note that this step may require a significant amount of time to finish.
+The duration can vary depending on the computational resources available.
+For example, when we used a node with an Intel Xeon 16 Cores 32 Threads E5-2683V4 2.1GHz
+processor and 8 NVIDIA GeForce RTX 2080 Ti GPUs exclusively for this simulation, 
+it took us **approximately one to two months**.
+Should you have either faster CPUs or faster GPUs,
+the time cost should be reduced. If you have faster CPUs or GPUs,
+the processing time should be reduced.
   
    ```bash
-   bash batch_run.sh
+   # starting from exploration/ae-simulator
+   bash batch_run.sh batch_plan.txt
    ```
+  
+  - Step 2 **[Minimal]**: We also provide a minimal version of the above step,
+which only reproduces a small part of Figure 9 and Table 2. It should take
+**one to two days** (or less should you have better GPUs or CPUs than ours,
+see the above description).
 
-  - Step 3: When the above step ends with success (i.e., the `batch_log.txt` ends with a line `Batch job ended`), further run the following fast commands (**several seconds**) to visualize the collected data.
+  ```bash
+  # starting from exploration/ae-simulator
+  bash batch_run.sh batch_plan_minimal.txt
+  ```
 
-   ```bash
-   # for Table 2
-   cd utility
-   bash run.sh
-   cd ..
-   # for Figure 9
-   cd experiments
-   bash batch_plot.sh
-   ```
+  - Step 3 **[Full]**: Once Step 2 [Full] completes successfully,
+proceed with the following fast commands
+to visualize the collected data. These commands should only take **a few seconds**
+to execute. You should be able to replicate **similar** results as the ones presented by
+Table 2 and Figure 9.
 
-* **Expected Results**
-  - After Step 1, you are expected to replicate the **exact** images as the ones illustrated in Figure 8. 
-  - After Step 3, you should be able to replicate **similar** results as the ones presented by Table 2 and Figure 9.
+  ```bash
+  # starting from exploration/ae-simulator
+  cd utility
+  bash run.sh
+  # after which you should replicate results similar to Table 2
+  
+  cd ..
+  bash batch_plot.sh
+  cd experiments
+  # after which you should replicate results similar to Figure 9
+  ```
+  
+  - Step 3 **[Minimal]**: Once Step 2 [Minimal] finishes, proceed with the
+following fast commands to visualize the collected data. These commands should
+only take **a few seconds** to execute. You should be able to replicate **similar**
+results as the ones presented by part of the Table 2 and Figure 9.
+
+  ```bash
+  # starting from exploration/ae-simulator
+  cd utility_minimal
+  bash run.sh
+  # after which you should replicate one cell of Table 2 (FEMNIST, d=20%) with similar data
+  
+  cd ..
+  bash batch_plot_minimal.sh
+  cd experiments
+  # after which you should replicate the FEMNIST part of Figure 9 with similar data
+  ```
 
 #### E2 [*Efficiency of Noise Enforcement*]
 
-* **Preparation** Please make sure that you have followed the instructions in Section [Cluster Deployment](#4-cluster-deployment) and enter the folder `exploration/ae-cluster`.
-* **Execution**
-  - Step 1: Start the allocated AWS EC2 cluster and set the bandwidth limit using the following commands, which takes **two to three minutes** to finish:
+* **Preparation** Before proceeding with the experiment, please ensure that you have
+followed the instructions provided in Section [4.1](#41-install-and-configure-aws-cli),
+[4.2](#42-configure-and-allocate-a-cluster), and [4.3](#43-setting-up-the-cluster)
+and enter the folder `exploration/ae-cluster`.
+
+* **Execution and Expected Results**
+
+  - Step 1: To reproduce Table 3, perform the following deterministic calculations
+using the provided commands. This step should take **less than one second** to complete.
+After this step, you are expected to see the **exact** Table 3 in the command line.
+  
+  ```bash
+  # starting from the exploration/ae-cluster directory
+  cd network
+  python main.py
+  ```
+
+  - Step 2: Start the allocated AWS EC2 cluster and set the bandwidth limit using
+the following commands. This step will take **approximately two to three minutes** to
+complete:
 
   ```bash
+  # starting from the exploration/ae-cluster directory
+
+  # if the cluster is not started
   bash manage_cluster.sh start
-  # after the above command returns and wait for approximately one more minute
+  # if the cluster is just started, wait for about a minute before executing it
   bash manage_cluster.sh limit_bandwidth
   ```
 
-  - Step 2: Reproducing the related part of Figure 10 needs to run the following commands, which may takes **four to five** days to complete. Similar to simulation, a line `Batch jobs ended.` will be appended to the log file `batch_log.txt` when all the jobs finished. It is also noteworthy that the cluster will be automatically stopped after the completion of all jobs, and thus there is no need for waiting at the table.
+  - Step 3 **[Full]**: To reproduce a part of Figure 10, execute the following
+commands. This step may take **approximately four to five days** to complete.
+On completion, the cluster should be automatically shut down to save your expense.
   
   ```bash
-  # for part of Figure 10
-  bash batch_run.sh batch_plan.txt
+  # starting from the exploration/ae-cluster directory
+  bash batch_run.sh batch_plan_no_pipeline.txt
   ```
 
-  - Step 3: Reproducing Table 3 only needs calculation using the following commands within **one second**:
+  - Step 3 **[Minimal]**: To reproduce a minimal part of the expected result,
+execute the following commands. This step may take **around three hours** to complete.
   
   ```bash
-  # for Table 3
-  python network/main.py
+  # starting from the exploration/ae-cluster directory
+  bash batch_run.sh batch_plan_no_pipeline_minimal.txt
   ```
 
-* **Expected Results**
-  - After Step 3, you are expected to see the **exact** data of Table 3 in the command line.
-  - The processing of the collected data for Figure 10 is deferred to the next experiment (**E3**).
+  - Step 4 **[Full]**: Once Step 3 [Full] completes successfully, proceed with the following
+fast commands to visualize the collected data. These commands should only
+take **a few seconds** to execute. You should able to replicate
+the `plain` part (meaning no pipeline acceleration) of Figure 10 with **similar** figures.
+
+  ```bash
+  # starting from the exploration/ae-cluster directory
+  bash batch_plot_no_pipeline.sh
+  cd no-pipeline-time
+  # after which you should replicate results similar to the 'plain' part of Figure 10
+  ```
+  
+  - Step 4 **[Minimal]**: Once Step 3 [Minimal] completes successfully, proceed with the following
+fast commands to visualize the collected data. These commands should only
+take **a few seconds** to execute. You should able to replicate
+the `plain` part of Figure 10(e) with **similar** figures.
+
+  ```bash
+  # starting from the exploration/ae-cluster directory
+  bash batch_plot_no_pipeline_minimal.sh
+  cd no-pipeline-time
+  # after which you should replicate results similar to the plain part of Figure 10(e)
+  ```
 
 #### E3 [*Efficiency of Pipeline Acceleration*]
-* **Preparation** Similar to **E2**, Please make sure that you have followed the instructions in Section [Cluster Deployment](#4-cluster-deployment) and enter the folder `exploration/ae-cluster`.
-* **Execution**
-  - Step 1: Again, start and configure the AWS EC2 cluster with the following commands in **two to three** minutes
 
-  ```bash
-  bash manage_cluster.sh start
-  # after the above command returns and wait for approximately one more minute
-  bash manage_cluster.sh limit_bandwidth
-  ```
+* **Preparation**
+Identical to **E2**, before proceeding with the experiment, please ensure that you have
+entered the folder `exploration/ae-cluster` and started the cluster.
 
-  - Step 2: Reproducing the remaining part of Figure 10 needs to run the following commands, which may takes **three to four** days to complete. Similarly, a successful completion of jobs will be indicated by the final line `Batch jobs ended.` appended to the log file `batch_log.txt`. The cluster will also be then shut down automatically.
+* **Execution and Expected Results**
+
+  - Step 1 **[Full]**: To reproduce the remaining part of Figure 10, execute the following
+commands. This step may take approximately three to four days to complete.
+The cluster will be automatically shut down after the jobs are completed.
   
   ```bash
-  # for the other part of Figure 10
-  bash batch_run.sh batch_plan_2.txt
-  ```
-
-  - Step 3: Processing the collected data using the following commands, which only takes **several minutes**.
-  ```bash
-  cd performance
-  bash batch_plot.sh
+  # starting from the exploration/ae-cluster directory
+  bash batch_run.sh batch_plan_pipeline.txt
   ```
   
-* **Expected Results**
-  - After Step 2, you are expected to generated images **similar** to the ones presented in Figure 10.
+  - Step 1 **[Minimal]**: To minimally reproduce the remaining part of Figure 10,
+execute the following commands.
+
+  ```bash
+  # starting from the exploration/ae-cluster directory
+  bash batch_run.sh batch_plan_pipeline_minimal.txt
+  ```
+
+  - Step 2 **[Full]**: Process the collected data using the following commands.
+This step will only take **several minutes** to complete. After completing this
+step, you should generate the entire shape of Figure 10 with **similar details**.
+
+  ```bash
+  bash batch_plot_pipeline.sh
+  cd pipeline-time
+  # after which which you should replicate results similar to the ones in Figure 10
+  ```
+  
+  - Step 2 **[Minimal]**: Process the collected data using the following commands.
+This step will only take **several seconds** to complete. After completing this
+step, you should generate the entire shape of Figure 10(e) with **similar details**.
+
+  ```bash
+  bash batch_plot_pipeline_minimal.sh
+  cd pipeline-time
+  # after which which you should replicate results similar to the ones in Figure 10(e)
+  ```
 
 ## 6. Repo Structure
 
@@ -397,19 +535,18 @@ Repo Root
     |---- analysis                     # Backend for resulting data processing
 ```
 
-## Notes
+## Support
+If you need any help, please submit a Github issue, or contact Zhifeng Jiang via zjiangaj@cse.ust.hk.
 
-Please consider citing our paper if 
-you use the code or data in your research project.
+## Citation
+
+If you find this repository useful, please consider giving ⭐ and citing our paper (preprint available [here](https://arxiv.org/pdf/2209.12528.pdf)):
 
 ```bibtex
 @inproceedings{jiang2024efficient,
   author={Jiang, Zhifeng and Wang, Wei and Ruichuan, Chen},
-  title={Efficient Federated Learning with Dropout-Resilient Differential Privacy},
+  title={Dordis: Efficient Federated Learning with Dropout-Resilient Differential Privacy},
   year={2024},
   booktitle={EuroSys},
 }
 ```
-
-## Contact
-Zhifeng Jiang (zjiangaj@cse.ust.hk).
