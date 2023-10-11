@@ -15,6 +15,7 @@
 This repository contains the evaluation artifacts of our paper titled 
 *Dordis: Efficient Federated Learning with Dropout-Resilient Differential Privacy*, 
 which will be presented at EuroSys'24 conference.
+You can find the preprint of the paper [here](https://arxiv.org/pdf/2209.12528.pdf).
 
 [Zhifeng Jiang](http://home.cse.ust.hk/~zjiangaj/), [Wei Wang](https://home.cse.ust.hk/~weiwa/), [Ruichuan Chen](https://www.ruichuan.org/)
 
@@ -28,8 +29,19 @@ We present Dordis, a distributed differentially private FL framework that is hig
 
 </details>
 
-You can find the preprint of the paper [here](https://arxiv.org/pdf/2209.12528.pdf).
-
+## Table of Contents
+1. [Overview](#1-overview)
+2. [Prerequisites](#2-prerequisites)
+   * Necessary dependencies installation before anything begins.
+3. [Simulation](#3-simulation)  
+   * Learn how to run experiment in simulation mode.  
+4. [Cluster Deployment](#4-cluster-deployment)
+   * Learn how to run experiments in a distributed manner.
+5. [Reproducing Experimental Results](#5-reproducing-experimental-results)
+   * Learn how to reproduce paper experiments.
+6. [Repo Structure](#6-repo-structure)
+   * What are contained in the project root folder.
+  
 ## 1. Overview
 
 The system supports two modes of operation:
@@ -42,21 +54,6 @@ This mode enables you to run experiments on an AWS EC2 cluster
 funded by your own account. Alternatively, you can also run experiments on 
 an existing cluster of Ubuntu nodes (currently undocumented). 
 Cluster Deployment Mode is typically used for evaluating runtime performance.
-
-The rest of the README is organized as follows:
-
-### Table of Contents
-
-2. [Prerequisites](#2-prerequisites)
-   * Necessary dependencies installation before anything begins.
-3. [Simulation](#3-simulation)  
-   * Learn how to run experiment in simulation mode.  
-4. [Cluster Deployment](#4-cluster-deployment)
-   * Learn how to run experiments in a distributed manner.
-5. [Reproducing Experimental Results](#5-reproducing-experimental-results)
-   * Learn how to reproduce paper experiments.
-6. [Repo Structure](#6-repo-structure)
-   * What are contained in the project root folder.
 
 ## 2. Prerequisites
 
