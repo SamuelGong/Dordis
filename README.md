@@ -45,7 +45,7 @@ The rest of the README is organized as follows:
    * Learn how to run experiment in simulation mode.  
 4. [Cluster Deployment](#4-cluster-deployment)
    * Learn how to run experiments in a distributed manner.
-5. [Reproducing Experimental Results](#5-reproducing-experimental-results-full)
+5. [Reproducing Experimental Results](#5-reproducing-experimental-results)
    * Learn how to reproduce paper experiments.
 6. [Repo Structure](#6-repo-structure)
    * What are contained in the project root folder.
@@ -319,7 +319,7 @@ beginning of the log file.
 `bash simulator_run.sh kill_a_task [...]` as explained in the subsection above. The
 necessary information for killing a job, denoted by `[...]`, can also be found in the log file.
 
-## 5. Reproducing Experimental Results (Full)
+## 5. Reproducing Experimental Results
 
 ### 5.1 Major Claims
 
