@@ -1,4 +1,8 @@
 <p align="center">
+    <img src="asset/Dordis.png" height=130>
+</p>
+
+<p align="center">
     <a href="https://arxiv.org/abs/2209.12528"><img src="https://img.shields.io/badge/arxiv-2209.12528-silver" alt="Paper"></a>
     <a href=""><img src="https://img.shields.io/badge/Pub-EuroSys'24-olive" alt="Pub"></a>
     <a href="https://github.com/SamuelGong/Dordis"><img src="https://img.shields.io/badge/-github-teal?logo=github" alt="github"></a>
