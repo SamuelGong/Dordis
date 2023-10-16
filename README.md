@@ -41,6 +41,9 @@ We present Dordis, a distributed differentially private FL framework that is hig
    * Learn how to reproduce paper experiments.
 6. [Repo Structure](#6-repo-structure)
    * What are contained in the project root folder.
+7. [Support](#7-support)
+8. [License](#8-license)
+9. [Citation](#9-citation)
   
 ## 1. Overview
 
@@ -556,10 +559,14 @@ Repo Root
     |---- analysis                     # Backend for resulting data processing
 ```
 
-## Support
+## 7. Support
 If you need any help, please submit a Github issue, or contact Zhifeng Jiang via zjiangaj@cse.ust.hk.
 
-## Citation
+## 8. License
+
+The code included in this project is licensed under the [Apache 2.0 license](LICENSE). If you wish to use the codes and models included in this project for commercial purposes, please sign this [document](https://docs.google.com/forms/d/e/1FAIpQLSeJRoGkDtmN5LP5MS_xQFa2nerlcQT8gTEnEdiKmUVu3s2DWA/viewform?usp=sf_link) to obtain authorization.
+
+## 9. Citation
 
 If you find this repository useful, please consider giving ⭐ and citing our paper (preprint available [here](https://arxiv.org/pdf/2209.12528.pdf)):
 
