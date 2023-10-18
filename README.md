@@ -6,7 +6,7 @@
     <a href="https://arxiv.org/abs/2209.12528"><img src="https://img.shields.io/badge/arxiv-2209.12528-silver" alt="Paper"></a>
     <a href=""><img src="https://img.shields.io/badge/Pub-EuroSys'24-olive" alt="Pub"></a>
     <a href="https://github.com/SamuelGong/Dordis"><img src="https://img.shields.io/badge/-github-teal?logo=github" alt="github"></a>
-<!--     <a href="https://github.com/SamuelGong/Dordis/blob/main/LICENSE"><img src="https://img.shields.io/github/license/SamuelGong/Dordis?color=yellow" alt="License"></a> -->
+    <a href="https://github.com/SamuelGong/Dordis/blob/main/LICENSE"><img src="https://img.shields.io/github/license/SamuelGong/Dordis?color=yellow" alt="License"></a>
     <img src="https://badges.toozhao.com/badges/01HCERSP3HP3DQDCZGBGN0BFYX/green.svg" alt="Count"/>
 </p>
 
