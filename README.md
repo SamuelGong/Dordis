@@ -385,7 +385,8 @@ the processing time should be reduced.
    ```
   
   - Step 2 **[Minimal]**: We also provide a minimal version of the above step,
-which only reproduces a small part of Figure 9 and Table 2. It should take
+which only reproduces the sub-figure (a) of Figure 9 and the particular cell that
+corresponds to FEMNIST with d=20% in Table 2. It should take
 **one to two days** (or less should you have better GPUs or CPUs than ours,
 see the above description).
 
@@ -471,7 +472,8 @@ On completion, the cluster should be automatically shut down to save your expens
   ```
 
   - Step 3 **[Minimal]**: To reproduce a minimal part of the expected result,
-execute the following commands. This step may take **around three hours** to complete.
+execute the following commands. This step replicates the `plain` part of Figure 10(e),
+and the experiment may take **around three hours** to complete.
   
   ```bash
   # starting from the exploration/ae-cluster directory
@@ -519,7 +521,7 @@ The cluster will be automatically shut down after the jobs are completed.
   bash batch_run.sh batch_plan_pipeline.txt
   ```
   
-  - Step 1 **[Minimal]**: To minimally reproduce the remaining part of Figure 10,
+  - Step 1 **[Minimal]**: To reproduce the `pipe` part of Figure 10(e),
 execute the following commands.
 
   ```bash
@@ -534,7 +536,7 @@ step, you should generate the entire shape of Figure 10 with **similar details**
   ```bash
   bash batch_plot_pipeline.sh
   cd pipeline-time
-  # after which which you should replicate results similar to the ones in Figure 10
+  # after which you should replicate results similar to the ones in Figure 10
   ```
   
   - Step 2 **[Minimal]**: Process the collected data using the following commands.
@@ -544,7 +546,7 @@ step, you should generate the entire shape of Figure 10(e) with **similar detail
   ```bash
   bash batch_plot_pipeline_minimal.sh
   cd pipeline-time
-  # after which which you should replicate results similar to the ones in Figure 10(e)
+  # after which you should replicate results similar to the ones in Figure 10(e)
   ```
 
 ## 6. Repo Structure
