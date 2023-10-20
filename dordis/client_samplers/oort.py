@@ -3,7 +3,7 @@ import numpy as np
 from dordis.config import Config
 from dordis.client_samplers import base
 from dordis.utils.share_memory_handler \
-    import SAMPLED_CLIENTS, CLIENT_STATS
+    import SAMPLED_CLIENTS, CLIENT_STATS, ShareBase
 import math
 import random
 from random import Random
