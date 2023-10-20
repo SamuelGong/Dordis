@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# To avoid error "Font family 'Times New Roman' not found."
+sudo apt install msttcorefonts -qq
+rm ~/.cache/matplotlib -rf
+
 # make it suitable for your time zone
 sudo timedatectl set-timezone Asia/Hong_Kong
 

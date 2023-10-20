@@ -13,3 +13,4 @@ torchvision
 psutil
 networkx
 paramiko
+matplotlib

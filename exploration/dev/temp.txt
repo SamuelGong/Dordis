@@ -1,0 +1,24 @@
+
+[INFO][(10-20) 16:52:44]: Batch jobs started. The pid of this coordinator is 9122.
+
+[INFO][(10-20) 16:52:45]: Task 0: experiments/dps_opt_femnist_no_no_20_e6_r50_c1_n1000_select100.yml started.
+Can be killed halfway by bash simulator_run.sh kill_a_task experiments/20231020-165244 && rm -rf experiments/20231020-165244
+Can be analyzed by bash simulator_run.sh analyze_a_task experiments/20231020-165244
+Can be viewed at a computing node by vim /home/.../Dordis/exploration/ae-simulator/experiments/20231020-165244/dordis-coordinator/log.txt 
+[INFO][(10-20) 16:52:48]: Polling its status... 
+[INFO][(10-20) 16:52:49]: Elapsed time: 0, task experiments/dps_opt_femnist_no_no_20_e6_r50_c1_n1000_select100.yml has stopped: False. 
+[INFO][(10-20) 16:53:16]: Elapsed time: 28, task experiments/dps_opt_femnist_no_no_20_e6_r50_c1_n1000_select100.yml has stopped: False. 
+[INFO][(10-20) 16:53:29]: It seems that the program has stopped. The responses are ['root 907 1 0 16:43 ? 00:00:00 /usr/bin/python3 /usr/bin/networkd-dispatcher --run-startup-triggers', '... 9122 2202 1 16:52 ? 00:00:00 python /home/.../Dordis/exploration/ae-simulator/../dev/batch_run.py local_start_tasks /home/.../Dordis/exploration/ae-simulator/batch_plan_minimal.txt', "... 10638 9122 0 16:53 ? 00:00:00 /bin/bash -c ps -ef | grep -E 'dordis|run' | grep python"] 
+[INFO][(10-20) 16:53:29]: Elapsed time: 40, task experiments/dps_opt_femnist_no_no_20_e6_r50_c1_n1000_select100.yml has stopped: True. 
+[INFO][(2023-10-20) 16:53:30.060] [registry.py:29]: Got cnn_ddgauss model with 62-dim output. 
+[INFO][(2023-10-20) 16:53:30.060] [payload.py:54]: FL weight_info: {'ordered_keys': ['conv1.weight', 'conv1.bias', 'conv2.weight', 'conv2.bias', 'fc3.weight', 'fc3.bias', 'fc4.weight', 'fc4.bias'], 'layer_shape': {'conv1.weight': [32, 1, 3, 3], 'conv1.bias': [32], 'conv2.weight': [64, 32, 3, 3], 'conv2.bias': [64], 'fc3.weight': [128, 7744], 'fc3.bias': [128], 'fc4.weight': [62, 128], 'fc4.bias': [62]}, 'trainable': ['conv1.weight', 'conv1.bias', 'conv2.weight', 'conv2.bias', 'fc3.weight', 'fc3.bias', 'fc4.weight', 'fc4.bias'], 'non_trainable': []}. 
+[INFO][(2023-10-20) 16:53:30.296] [registry.py:40]: Server protocol: dp_plus_secagg 
+[INFO][(2023-10-20) 16:53:30.297] [registry.py:18]: Pseudorandom generator: os_random 
+[INFO][(2023-10-20) 16:53:30.297] [registry.py:17]: Key agreement: elliptic_curve 
+[INFO][(2023-10-20) 16:53:30.297] [registry.py:19]: Differential privacy: dskellam 
+[INFO][(2023-10-20) 16:53:30.297] [base.py:98]: Chunk size calculated for dim 1018174 : {0: 1018174}. 
+[INFO][(2023-10-20) 16:53:30.297] [base.py:106]: To be padded for DP: dim 1048576: {0: 1048576}. Traceback (most recent call last): File "/home/.../Dordis/exploration/ae-simulator/../analysis/stat.py", line 135, in <module> main(sys.argv[1:]) File "/home/.../Dordis/exploration/ae-simulator/../analysis/stat.py", line 124, in main process_a_folder(task_folder) File "/home/.../Dordis/exploration/ae-simulator/../analysis/stat.py", line 109, in process_a_folder result_dict, _ = extract_log(task_folder, phase_info, File "/home/.../Dordis/exploration/analysis/backend.py", line 472, in extract_log add_phase_average_metrics(result_dict) File "/home/.../Dordis/exploration/analysis/backend.py", line 138, in add_phase_average_metrics in result_dict[COORDINATOR][ROUND].items(): TypeError: 'NoneType' object is not subscriptable 
+[INFO][(10-20) 16:53:30]: Task 0: experiments/dps_opt_femnist_no_no_20_e6_r50_c1_n1000_select100.yml analyzed. 
+[INFO][(10-20) 16:53:31]: Task 1: experiments/dps_xnoise_ideal_femnist_no_no_20_e6_r50_c1_n1000_select100.yml started. Can be killed halfway by bash simulator_run.sh kill_a_task experiments/20231020-165330 && rm -rf experiments/20231020-165330 Can be analyzed by bash simulator_run.sh analyze_a_task experiments/20231020-165330 Can be viewed at a computing node by vim /home/.../Dordis/exploration/ae-simulator/experiments/20231020-165330/dordis-coordinator/log.txt 
+[INFO][(10-20) 16:53:34]: Polling its status... 
+[INFO][(10-20) 16:53:35]: Elapsed time: 0, task experiments/dps_xnoise_ideal_femnist_no_no_20_e6_r50_c1_n1000_select100.yml has stopped: False.
