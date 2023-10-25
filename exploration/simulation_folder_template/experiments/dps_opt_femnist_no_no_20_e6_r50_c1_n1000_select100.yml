@@ -1,19 +1,23 @@
 clients:
     type: base
-    total_clients: 1000
-    num_physical_clients: 100
+    # total_clients: 1000
+    total_clients: 200  # temporary use
+    # num_physical_clients: 100
+    num_physical_clients: 20  # temporary use
     resource_saving: true
     worst_online_frac: 1.0  # placeholder for using fixed_sample_size, no real use
     sample:
         type: uniform
         mode: fixed_sample_size
-        sample_size: 100
+        # sample_size: 100
+        sample_size: 20  # temporary use
         seed: 1
     dropout:
         type: fixed_frac
         args:
             - 0.2
         seed: 1
+    maximum_concurrency: 2  # temporary use: only useful in simulation mode: how many clients to simulate at a time
 
 server:
     type: base
@@ -100,6 +104,7 @@ app:
         augment:
             type: simple
             repeat: 2
+        num_test_samples: 2000  # temporary use
     trainer:
         epochs: 2
         batch_size: 20
@@ -110,6 +115,7 @@ app:
         learning_rate: 0.01
         momentum: 0.9
         weight_decay: 0.0
+
 
 results:
     results_dir: ./

@@ -101,8 +101,12 @@ class DataSource(base.DataSource):
         # However, in real environment, it is not uncommon for the server to have GPU.
         # To recover a reasonable server runtime overhead in a used cluster, we thus do a down-sampling.
         # Note that server's testing datasets are IID and we are thus safe to do that.
-        if self.client_id == 0 and not torch.cuda.is_available():
+        # if self.client_id == 0 and not torch.cuda.is_available():
+        if self.client_id == 0:  # temporary use
             num_reserved_samples = 10000  # TODO: avoid hard-coding
+            if hasattr(Config().app.trainer.data, "num_test_samples"):
+                num_reserved_samples = Config().app.trainer.data.num_test_samples
+
             loaded_data["x"] = loaded_data["x"][:num_reserved_samples]
             loaded_data["y"] = loaded_data["y"][:num_reserved_samples]
 

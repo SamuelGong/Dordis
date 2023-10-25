@@ -440,6 +440,8 @@ class ProtocolServer(Protocol, ClientSamplePlugin, ABC):
 
     def gradually_publish_a_value(self, channel, message, send_list, key_postfix):
         num_cpus_at_a_time = mp.cpu_count() // 4  # TODO: avoid hard-coding
+        if hasattr(Config().clients, "maximum_concurrency"):
+            num_cpus_at_a_time = Config().clients.maximum_concurrency
 
         # remember that we have two types of sending
         send_type = message["type"]
