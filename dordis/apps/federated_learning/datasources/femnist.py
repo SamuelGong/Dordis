@@ -104,8 +104,8 @@ class DataSource(base.DataSource):
         # if self.client_id == 0 and not torch.cuda.is_available():
         if self.client_id == 0:  # temporary use
             num_reserved_samples = 10000  # TODO: avoid hard-coding
-            if hasattr(Config().app.trainer.data, "num_test_samples"):
-                num_reserved_samples = Config().app.trainer.data.num_test_samples
+            if hasattr(Config().app.data, "num_test_samples"):
+                num_reserved_samples = Config().app.data.num_test_samples
 
             loaded_data["x"] = loaded_data["x"][:num_reserved_samples]
             loaded_data["y"] = loaded_data["y"][:num_reserved_samples]
