@@ -21,7 +21,7 @@ request = pc.makeRequestRSpec()
 node = request.RawPC("node")
 
 # Install and execute a script that is contained in the repository.
-node.addService(pg.Execute(shell="bash", command="cd /local/Dordis/exploration/dev && bash standalone_install.sh"))
+node.addService(pg.Execute(shell="bash", command="cd /local/repository/exploration/dev && bash standalone_install.sh"))
 
 # Print the RSpec to the enclosing page.
 pc.printRequestRSpec(request)
