@@ -29,6 +29,7 @@ We present Dordis, a distributed differentially private FL framework that is hig
 
 </details>
 
+
 ## Table of Contents
 1. [Overview](#1-overview)
 2. [Prerequisites](#2-prerequisites)
@@ -580,3 +581,9 @@ If you find this repository useful, please consider giving ⭐ and citing our pa
   booktitle={EuroSys},
 }
 ```
+
+## Recent activity [![Time period](https://images.repography.com/44587806/SamuelGong/Dordis/recent-activity/8XPPH8JArUAvVdkGA8K5SCbumi1AfsBrGcyYp_yZFVY/6XDpH_F_-jcSljG9RSH5DA69zYgOAX9WlHd86A0iXcY_badge.svg)](https://repography.com)
+[![Timeline graph](https://images.repography.com/44587806/SamuelGong/Dordis/recent-activity/8XPPH8JArUAvVdkGA8K5SCbumi1AfsBrGcyYp_yZFVY/6XDpH_F_-jcSljG9RSH5DA69zYgOAX9WlHd86A0iXcY_timeline.svg)](https://github.com/SamuelGong/Dordis/commits)
+[![Issue status graph](https://images.repography.com/44587806/SamuelGong/Dordis/recent-activity/8XPPH8JArUAvVdkGA8K5SCbumi1AfsBrGcyYp_yZFVY/6XDpH_F_-jcSljG9RSH5DA69zYgOAX9WlHd86A0iXcY_issues.svg)](https://github.com/SamuelGong/Dordis/issues)
+[![Pull request status graph](https://images.repography.com/44587806/SamuelGong/Dordis/recent-activity/8XPPH8JArUAvVdkGA8K5SCbumi1AfsBrGcyYp_yZFVY/6XDpH_F_-jcSljG9RSH5DA69zYgOAX9WlHd86A0iXcY_prs.svg)](https://github.com/SamuelGong/Dordis/pulls)
+[![Activity map](https://images.repography.com/44587806/SamuelGong/Dordis/recent-activity/8XPPH8JArUAvVdkGA8K5SCbumi1AfsBrGcyYp_yZFVY/6XDpH_F_-jcSljG9RSH5DA69zYgOAX9WlHd86A0iXcY_map.svg)](https://github.com/SamuelGong/Dordis/commits)
