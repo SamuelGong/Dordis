@@ -578,7 +578,7 @@ If you find this repository useful, please consider giving ⭐ and citing our pa
   author={Jiang, Zhifeng and Wang, Wei and Ruichuan, Chen},
   title={Dordis: Efficient Federated Learning with Dropout-Resilient Differential Privacy},
   year={2024},
-  booktitle={EuroSys},
+  booktitle={ACM EuroSys},
 }
 ```
 
