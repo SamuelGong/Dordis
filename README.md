@@ -15,7 +15,7 @@
 This repository contains the evaluation artifacts of our paper titled 
 *Dordis: Efficient Federated Learning with Dropout-Resilient Differential Privacy*, 
 which will be presented at ACM EuroSys'24 conference.
-You can find the preprint of the paper [here](https://arxiv.org/pdf/2209.12528.pdf).
+You can find the paper [here](https://dl.acm.org/doi/10.1145/3627703.3629559).
 
 [Zhifeng Jiang](http://home.cse.ust.hk/~zjiangaj/), [Wei Wang](https://home.cse.ust.hk/~weiwa/), [Ruichuan Chen](https://www.ruichuan.org/)
 
