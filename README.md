@@ -571,7 +571,7 @@ The code included in this project is licensed under the [Apache 2.0 license](LIC
 
 ## 9. Citation
 
-If you find this repository useful, please consider giving ⭐ and citing our paper (preprint available [here](https://arxiv.org/pdf/2209.12528.pdf)):
+If you find this repository useful, please consider giving ⭐ and citing our paper:
 
 ```bibtex
 @inproceedings{jiang2024efficient,
