@@ -167,13 +167,14 @@ def modular_clip_by_value(data, clip_range_lower, clip_range_upper):
 def modular_clip(data, log_prefix_str, other_args):
     data = np.array(data)
     discrete_params_dict, = other_args
-    bits = discrete_params_dict["bits"]
-    mod_clip_lo, mod_clip_hi = -(2 ** (bits - 1)), 2 ** (bits - 1)
-    data = modular_clip_by_value(
-        data=data,
-        clip_range_lower=mod_clip_lo,
-        clip_range_upper=mod_clip_hi
-    )
-    logging.info("%s Modular clipped.", log_prefix_str)
+    if "bits" in discrete_params_dict:
+        bits = discrete_params_dict["bits"]
+        mod_clip_lo, mod_clip_hi = -(2 ** (bits - 1)), 2 ** (bits - 1)
+        data = modular_clip_by_value(
+            data=data,
+            clip_range_lower=mod_clip_lo,
+            clip_range_upper=mod_clip_hi
+        )
+        logging.info("%s Modular clipped.", log_prefix_str)
 
     return data.tolist()

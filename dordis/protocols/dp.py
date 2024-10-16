@@ -21,8 +21,10 @@ r = redis.Redis(connection_pool=redis_pool)
 class ProtocolServer(plaintext.ProtocolServer):
     def __init__(self, client_id=0):
         super().__init__(client_id=client_id)
-        self.init_sample_hadamard_seed = Config().agg\
-            .differential_privacy.params.init_sample_hadamard_seed
+        if hasattr(Config().agg.differential_privacy.params,
+                   "init_sample_hadamard_seed"):  # only used for ddgauss, dskellam
+            self.init_sample_hadamard_seed = Config().agg\
+                .differential_privacy.params.init_sample_hadamard_seed
 
         self.dp_handler = dp_registry.get()
 
@@ -66,28 +68,30 @@ class ProtocolServer(plaintext.ProtocolServer):
         surviving_clients = sorted(list(prepared_data.keys()))
 
         customized_idx = Config().app.repeat * round_idx + chunk_idx
-        sample_hadamard_seed = self.init_sample_hadamard_seed * customized_idx
-        logging.info("%s Phase started. Instructing %d "
-                     "clients to encode data using "
-                     "sample hamazard seed %d: %s.", log_prefix_str,
-                     len(surviving_clients), sample_hadamard_seed,
-                     surviving_clients)
-        self.set_a_shared_value(
-            key=["sample_hadamard_seed", round_idx, chunk_idx],
-            value=sample_hadamard_seed
-        )
-
-        return {
+        return_dict = {
             "payload": {
                 'round': round_idx,
                 'chunk': chunk_idx,
-                'phase': phase_idx,
-                'sample_hadamard_seed': sample_hadamard_seed
+                'phase': phase_idx
             },
             "send_list": surviving_clients,
             "key_postfix": [round_idx, chunk_idx, phase_idx],
             "log_prefix_str": log_prefix_str
         }
+        if hasattr(self, "init_sample_hadamard_seed"):
+            sample_hadamard_seed = self.init_sample_hadamard_seed * customized_idx
+            logging.info("%s Phase started. Instructing %d "
+                         "clients to encode data using "
+                         "sample hamazard seed %d: %s.", log_prefix_str,
+                         len(surviving_clients), sample_hadamard_seed,
+                         surviving_clients)
+            self.set_a_shared_value(
+                key=["sample_hadamard_seed", round_idx, chunk_idx],
+                value=sample_hadamard_seed
+            )
+            return_dict["payload"]["sample_hadamard_seed"] = sample_hadamard_seed
+
+        return return_dict
 
     def generate_output(self, args):
         round_idx, chunk_idx = args
@@ -234,17 +238,21 @@ class ProtocolClient(plaintext.ProtocolClient):
 
     def encode_data(self, args):
         payload, round_idx, chunk_idx, phase_idx, logical_client_id = args
-        sample_hadamard_seed = payload["sample_hadamard_seed"]
         log_prefix_str = self.get_log_prefix_str(
             round_idx=round_idx,
             chunk_idx=chunk_idx,
             phase_idx=phase_idx,
             logical_client_id=logical_client_id
         )
-        self.set_a_shared_value(
-            key=['sample_hadamard_seed', round_idx, chunk_idx],
-            value=sample_hadamard_seed
-        )
+
+        if "sample_hadamard_seed" in payload:
+            sample_hadamard_seed = payload["sample_hadamard_seed"]
+            self.set_a_shared_value(
+                key=['sample_hadamard_seed', round_idx, chunk_idx],
+                value=sample_hadamard_seed
+            )
+        else:
+            sample_hadamard_seed = None
         data = self.get_a_shared_value(
             key=['data', round_idx, chunk_idx]
         )

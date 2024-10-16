@@ -389,22 +389,22 @@ class ProtocolServer(base.ProtocolServer, PlaintextConst):
             )
 
             # DP unquantization
-            logging.info(f"[Debug] Before DP decoding: "
-                         f"{[round(e, 4) for e in agg_res[:3]]} "
-                         f"{[round(e, 4) for e in agg_res[-3:]]}.")
             sample_hadamard_seed = self.get_a_shared_value(
                 key=["sample_hadamard_seed", round_idx, chunk_idx]
             )
-            agg_res = self.dp_handler.decode_data(
-                data=agg_res,
-                log_prefix_str=log_prefix_str,
-                other_args=(sample_hadamard_seed, dp_params_dict)
-            )
-
-            logging.info(f"[Debug] After DP unquantization: "
-                         f"{[round(e, 4) for e in agg_res[:3]]} "
-                         f"{[round(e, 4) for e in agg_res[-3:]]}.")
-            logging.info("%s DP Unquantization done.", log_prefix_str)
+            if sample_hadamard_seed is not None:
+                logging.info(f"[Debug] Before DP decoding: "
+                             f"{[round(e, 4) for e in agg_res[:3]]} "
+                             f"{[round(e, 4) for e in agg_res[-3:]]}.")
+                agg_res = self.dp_handler.decode_data(
+                    data=agg_res,
+                    log_prefix_str=log_prefix_str,
+                    other_args=(sample_hadamard_seed, dp_params_dict)
+                )
+                logging.info(f"[Debug] After DP unquantization: "
+                             f"{[round(e, 4) for e in agg_res[:3]]} "
+                             f"{[round(e, 4) for e in agg_res[-3:]]}.")
+                logging.info("%s DP Unquantization done.", log_prefix_str)
 
             original_length = self.chunk_size[chunk_idx]
             agg_res = agg_res[:original_length]

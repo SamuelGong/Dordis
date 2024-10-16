@@ -1,13 +1,14 @@
 import logging
 from collections import OrderedDict
 from dordis.primitives.differential_privacy import (
-    ddgauss, dskellam
+    ddgauss, dskellam, gauss
 )
 from dordis.config import Config
 
 registered_dict = OrderedDict([
     ('ddgauss', ddgauss.Handler),
-    ('dskellam', dskellam.Handler)
+    ('dskellam', dskellam.Handler),
+    ('gauss', gauss.Handler)
 ])
 
 

@@ -129,6 +129,7 @@ dmypy.json
 .pyre/
 
 .DS_Store
+.idea
 
 # redis files
 *.rdb

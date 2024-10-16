@@ -4,6 +4,7 @@ from scipy import optimize, special
 from dordis.primitives.differential_privacy.utils\
     .rdp_accountant import get_privacy_spent
 
+
 RDP_ORDERS = tuple(range(2, 129)) + (256,)
 DIV_EPSILON = 1e-22
 
