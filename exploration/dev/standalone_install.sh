@@ -26,6 +26,7 @@ if [ ! -d ${CONDA_DIR} ]; then
   bash Anaconda3-2020.11-Linux-x86_64.sh -b -p ${CONDA_DIR}
   export PATH=${CONDA_DIR}/bin:$PATH
   rm Anaconda3-2020.11-Linux-x86_64.sh
+  source ~/anaconda3/etc/profile.d/conda.sh
   conda init bash
 else
   echo "[INFO] Anaconda already installed."
