@@ -12,6 +12,8 @@
 
 <h1 align="center">Dordis: Efficient Federated Learning with Dropout-Resilient Differential Privacy (ACM EuroSys 2024)</h1>
 
+> You can also explore the [DeepWiki](https://deepwiki.com/SamuelGong/Dordis) for this repository, which offers additional insights and helps with answering questions.
+
 This repository contains the evaluation artifacts of our paper titled 
 *Dordis: Efficient Federated Learning with Dropout-Resilient Differential Privacy*, 
 which will be presented at ACM EuroSys'24 conference.
